@@ -397,17 +397,28 @@ class TestFetchAllProcesses(PsutilTestCase):
     """
 
     def setUp(self):
-        self.pool = multiprocessing.Pool()
+        if LINUX and GITHUB_ACTIONS:
+            # the pool sometimes deadlocks on linux
+            # don't use it in CI
+            self.pool = None
+        else:
+            self.pool = multiprocessing.Pool()
 
     def tearDown(self):
-        self.pool.terminate()
-        self.pool.join()
+        if self.pool is not None:
+            self.pool.terminate()
+            self.pool.join()
 
     def iter_proc_info(self):
         # Fixes "can't pickle <function proc_info>: it's not the
         # same object as test_contracts.proc_info".
         from psutil.tests.test_contracts import proc_info
-        return self.pool.imap_unordered(proc_info, psutil.pids())
+        if self.pool is None:
+            for pid in psutil.pids():
+                yield proc_info(pid)
+        else:
+            for info in self.pool.imap_unordered(proc_info, psutil.pids()):
+                yield info
 
     def test_all(self):
         failures = []
