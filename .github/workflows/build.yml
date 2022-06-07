@@ -17,7 +17,13 @@
 # * https://github.com/marketplace/actions/cancel-workflow-action
 # * https://github.com/vmactions/freebsd-vm
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: master
+  release:
+    types: [released, prereleased]
+  workflow_dispatch:  # allows running workflow manually from the Actions tab
 name: build
 jobs:
   # Linux + macOS + Windows CPython 3.6+
@@ -63,6 +69,11 @@ jobs:
       with:
         name: wheels
         path: wheelhouse
+        
+    - uses: softprops/action-gh-release@v1
+      if: github.event_name == 'release'
+      with:
+        files: wheelhouse/*.whl
 
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
@@ -156,6 +167,11 @@ jobs:
       with:
         name: wheels
         path: wheelhouse
+
+    - uses: softprops/action-gh-release@v1
+      if: github.event_name == 'release'
+      with:
+        files: wheelhouse/*.whl
 
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
