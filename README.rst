@@ -57,6 +57,17 @@
     :target: https://tidelift.com/subscription/pkg/pypi-psutil?utm_source=pypi-psutil&utm_medium=referral&utm_campaign=readme
     :alt: Tidelift
 
+Fork
+====
+
+This fork builds `more wheels <https://github.com/giampaolo/psutil/pull/2103>`__. It receives `automatic <https://github.com/wei/pull>`__ merge commits from upstream.
+
+.. code-block:: bash
+
+    export PIP_FIND_LINKS=https://ddelange.github.io/psutil
+    # OR
+    pip install --find-links=https://ddelange.github.io/psutil
+
 -----
 
 .. raw:: html

@@ -3,7 +3,7 @@
 #
 # * Linux
 # * macOS
-# * Windows (disabled)
+# * Windows
 # * FreeBSD
 #
 # To skip certain builds see:
@@ -17,28 +17,28 @@
 # * https://github.com/marketplace/actions/cancel-workflow-action
 # * https://github.com/vmactions/freebsd-vm
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: master
+  release:
+    types: [released, prereleased]
+  workflow_dispatch:  # allows running workflow manually from the Actions tab
 name: build
 jobs:
-  # Linux + macOS + Python 3
-  linux-macos-py3:
-    name: ${{ matrix.os }}-py3
+  # Linux + macOS + Windows CPython 3.6+
+  cp36:
+    name: cp36+, ${{ matrix.os }}, ${{ matrix.archs }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest, macos-10.15]
         include:
-          - {name: Linux, python: '3.9', os: ubuntu-latest}
-    env:
-      CIBW_TEST_COMMAND:
-        PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/runner.py &&
-        PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/test_memleaks.py
-      CIBW_TEST_EXTRAS: test
-      CIBW_BUILD: 'cp36-* cp37-* cp38-* cp39-* cp310-*'
-      CIBW_SKIP: '*-musllinux_*'
+          - {os: macos-11, archs: "x86_64 universal2"}
+          - {os: ubuntu-20.04, archs: "x86_64 i686"}
+          - {os: ubuntu-20.04, archs: "aarch64"}
+          - {os: windows-2019, archs: "AMD64 x86"}
 
     steps:
     - name: Cancel previous runs
@@ -53,22 +53,28 @@ jobs:
         cache: pip
         cache-dependency-path: .github/workflows/build.yml
 
-    - name: Install cibuildwheel
-      run: pip install cibuildwheel
-
-    # - name: (Windows) install Visual C++ for Python 2.7
-    #   if: matrix.os == 'windows-latest'
-    #   run: |
-    #     choco install vcpython27 -f -y
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      if: matrix.archs == 'aarch64'
 
     - name: Run tests
-      run: cibuildwheel .
+      uses: pypa/cibuildwheel@v2.10.1
+      with:
+        config-file: "./cibuildwheel.toml"
+      env:
+        CIBW_ARCHS: ${{ matrix.archs }}
 
     - name: Create wheels
       uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: wheelhouse
+        
+    - uses: softprops/action-gh-release@v1
+      # additionally create a release for every commit to master
+      if: github.event_name == 'release' || github.event_name == 'push'
+      with:
+        files: wheelhouse/*.whl
 
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
@@ -78,25 +84,65 @@ jobs:
         mv dist/psutil*.tar.gz wheelhouse/
         python scripts/internal/print_hashes.py wheelhouse/
 
-  # Linux + macOS + Python 2
-  linux-macos-py2:
-    name: ${{ matrix.os }}-py2
+  # Windows cp37+ tests
+  # psutil tests do not like running from a virtualenv with python>=3.7 so
+  # not using cibuildwheel for those. run them "manually" with this job.
+  windows-cp3-test:
+    name: windows tests ${{ matrix.python }} ${{ matrix.architecture }}
+    needs: cp36
+    runs-on: windows-2019
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+        architecture: ["x86", "x64"]
+
+    steps:
+    - name: Cancel previous runs
+      uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        access_token: ${{ github.token }}
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: "${{ matrix.python }}"
+        architecture: "${{ matrix.architecture }}"
+        cache: pip
+        cache-dependency-path: .github/workflows/build.yml
+    - name: Download wheels
+      uses: actions/download-artifact@v3
+      with:
+        name: wheels
+        path: wheelhouse
+    - name: Run tests
+      run: |
+        mkdir .tests
+        cd .tests
+        pip install $(find ../wheelhouse -name '*-cp36-abi3-${{ matrix.architecture == 'x86' && 'win32' || 'win_amd64'}}.whl')[test]
+        export PYTHONWARNINGS=always
+        export PYTHONUNBUFFERED=1
+        export PSUTIL_DEBUG=1
+        python ../psutil/tests/runner.py
+        python ../psutil/tests/test_memleaks.py
+      shell: bash
+
+  # Linux + macOS + CPython 2.7 & 3.5
+  linux-macos-cp27-cp35:
+    name: cp27/cp35, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-10.15]
-        include:
-          - {name: Linux, python: '3.9', os: ubuntu-latest}
+        os: [ubuntu-20.04, macos-11]
     env:
-      CIBW_ARCHS_LINUX: 'x86_64 i686'
       CIBW_TEST_COMMAND:
         PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/runner.py &&
         PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/test_memleaks.py
       CIBW_TEST_EXTRAS: test
-      CIBW_BUILD: 'cp27-*'
-      CIBW_SKIP: '*-musllinux_*'
+      CIBW_BUILD: 'cp27-* cp35-*'
+      CIBW_SKIP: 'cp35-macosx_x86_64'
 
     steps:
     - name: Cancel previous runs
@@ -123,6 +169,12 @@ jobs:
         name: wheels
         path: wheelhouse
 
+    - uses: softprops/action-gh-release@v1
+      # additionally create a release for every commit to master
+      if: github.event_name == 'release' || github.event_name == 'push'
+      with:
+        files: wheelhouse/*.whl
+
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -131,8 +183,25 @@ jobs:
         mv dist/psutil*.tar.gz wheelhouse/
         python scripts/internal/print_hashes.py wheelhouse/
 
+  gh-pages:
+    # only run when action-gh-release ran
+    if: github.event_name == 'release' || github.event_name == 'push'
+    needs: [cp36, linux-macos-cp27-cp35]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v4
+      - name: Write index.html
+        run: |
+          mkdir ./public
+          curl -sSL https://gist.github.com/ddelange/e4fb438f2f724413f45c4bece46aacfa/raw/release_assets_pip_find_links.py | python - > ./public/index.html
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+
   freebsd:
-    runs-on: macos-10.15
+    runs-on: macos-12
     steps:
     - name: Cancel previous runs
       uses: styfle/cancel-workflow-action@0.6.0

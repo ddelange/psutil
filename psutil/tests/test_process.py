@@ -49,8 +49,10 @@ from psutil.tests import HAS_PROC_CPU_NUM
 from psutil.tests import HAS_PROC_IO_COUNTERS
 from psutil.tests import HAS_RLIMIT
 from psutil.tests import HAS_THREADS
+from psutil.tests import MACOS_11PLUS
 from psutil.tests import PYPY
 from psutil.tests import PYTHON_EXE
+from psutil.tests import QEMU_USER
 from psutil.tests import PsutilTestCase
 from psutil.tests import ThreadTask
 from psutil.tests import call_until
@@ -242,6 +244,7 @@ class TestProcess(PsutilTestCase):
             psutil.Process().cpu_percent()
             assert m.called
 
+    @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     def test_cpu_times(self):
         times = psutil.Process().cpu_times()
         assert (times.user > 0.0) or (times.system > 0.0), times
@@ -253,6 +256,7 @@ class TestProcess(PsutilTestCase):
         for name in times._fields:
             time.strftime("%H:%M:%S", time.localtime(getattr(times, name)))
 
+    @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     def test_cpu_times_2(self):
         user_time, kernel_time = psutil.Process().cpu_times()[:2]
         utime, ktime = os.times()[:2]
@@ -615,6 +619,8 @@ class TestProcess(PsutilTestCase):
 
         for nt in maps:
             if not nt.path.startswith('['):
+                if QEMU_USER and "/bin/qemu-" in nt.path:
+                    continue
                 assert os.path.isabs(nt.path), nt.path
                 if POSIX:
                     try:
@@ -678,6 +684,7 @@ class TestProcess(PsutilTestCase):
         assert not p.is_running()
         assert not p.is_running()
 
+    @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     def test_exe(self):
         p = self.spawn_psproc()
         exe = p.exe()
@@ -723,6 +730,9 @@ class TestProcess(PsutilTestCase):
                     self.assertEqual(' '.join(p.cmdline()[1:]),
                                      ' '.join(cmdline[1:]))
                     return
+            if QEMU_USER:
+                self.assertEqual(' '.join(p.cmdline()[2:]), ' '.join(cmdline))
+                return
             self.assertEqual(' '.join(p.cmdline()), ' '.join(cmdline))
 
     @unittest.skipIf(PYPY, "broken on PYPY")
@@ -731,6 +741,9 @@ class TestProcess(PsutilTestCase):
         create_exe(testfn)
         cmdline = [testfn] + (["0123456789"] * 20)
         p = self.spawn_psproc(cmdline)
+        if QEMU_USER:
+            self.assertEqual(p.cmdline()[2:], cmdline)
+            return
         self.assertEqual(p.cmdline(), cmdline)
 
     def test_name(self):
@@ -739,7 +752,8 @@ class TestProcess(PsutilTestCase):
         pyexe = os.path.basename(os.path.realpath(sys.executable)).lower()
         assert pyexe.startswith(name), (pyexe, name)
 
-    @unittest.skipIf(PYPY, "unreliable on PYPY")
+    @unittest.skipIf(PYPY or QEMU_USER, "unreliable on PYPY")
+    @unittest.skipIf(QEMU_USER, "unreliable on QEMU user")
     def test_long_name(self):
         testfn = self.get_testfn(suffix="0123456789" * 2)
         create_exe(testfn)
@@ -750,6 +764,7 @@ class TestProcess(PsutilTestCase):
     @unittest.skipIf(SUNOS, "broken on SUNOS")
     @unittest.skipIf(AIX, "broken on AIX")
     @unittest.skipIf(PYPY, "broken on PYPY")
+    @unittest.skipIf(QEMU_USER, "broken on QEMU user")
     def test_prog_w_funky_name(self):
         # Test that name(), exe() and cmdline() correctly handle programs
         # with funky chars such as spaces and ")", see:
@@ -847,6 +862,7 @@ class TestProcess(PsutilTestCase):
             except psutil.AccessDenied:
                 pass
 
+    @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     def test_status(self):
         p = psutil.Process()
         self.assertEqual(p.status(), psutil.STATUS_RUNNING)
@@ -1072,6 +1088,7 @@ class TestProcess(PsutilTestCase):
                         side_effect=psutil.NoSuchProcess(0, 'foo')):
             self.assertIsNone(p.parent())
 
+    @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     @retry_on_failure()
     def test_parents(self):
         parent = psutil.Process()
@@ -1426,6 +1443,7 @@ class TestProcess(PsutilTestCase):
 
     @unittest.skipIf(not HAS_ENVIRON, "not supported")
     @unittest.skipIf(not POSIX, "POSIX only")
+    @unittest.skipIf(MACOS_11PLUS, "macOS 11+ not supported, issue #2084")
     def test_weird_environ(self):
         # environment variables can contain values without an equals sign
         code = textwrap.dedent("""
