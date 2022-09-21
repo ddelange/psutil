@@ -71,7 +71,8 @@ jobs:
         path: wheelhouse
         
     - uses: softprops/action-gh-release@v1
-      if: github.event_name == 'release'
+      # additionally create a release for every commit to master
+      if: github.event_name == 'release' || github.event_name == 'push'
       with:
         files: wheelhouse/*.whl
 
@@ -169,7 +170,8 @@ jobs:
         path: wheelhouse
 
     - uses: softprops/action-gh-release@v1
-      if: github.event_name == 'release'
+      # additionally create a release for every commit to master
+      if: github.event_name == 'release' || github.event_name == 'push'
       with:
         files: wheelhouse/*.whl
 
@@ -180,6 +182,23 @@ jobs:
         python setup.py sdist
         mv dist/psutil*.tar.gz wheelhouse/
         python scripts/internal/print_hashes.py wheelhouse/
+
+  gh-pages:
+    # only run when action-gh-release ran
+    if: github.event_name == 'release' || github.event_name == 'push'
+    needs: [cp36, linux-macos-cp27-cp35]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v4
+      - name: Write index.html
+        run: |
+          mkdir ./public
+          curl -sSL https://gist.github.com/ddelange/e4fb438f2f724413f45c4bece46aacfa/raw/release_assets_pip_find_links.py | python - > ./public/index.html
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
 
   freebsd:
     runs-on: macos-12

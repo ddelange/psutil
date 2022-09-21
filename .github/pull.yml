@@ -1,0 +1,6 @@
+# https://github.com/wei/pull
+version: "1"
+rules:
+  - base: master
+    upstream: giampaolo:master
+    mergeMethod: merge
