@@ -60,13 +60,22 @@
 Fork
 ====
 
-This fork builds `more wheels <https://github.com/giampaolo/psutil/pull/2103>`__. It receives `automatic <https://github.com/wei/pull>`__ merge commits from upstream.
+This fork builds `more wheels <https://github.com/giampaolo/psutil/pull/2103>`__:
+- It receives `automatic <https://github.com/wei/pull>`__ merge commits from upstream.
+- It creates a release for each commit on `master`, and uploads wheels as release assets.
+- After building wheels, there is a deploy to Github Pages containing all wheel links.
+- With each commit that changes `__version__`, new wheels will show up.
+- Links on Github Pages will point to the latest commit that still contains a specific `__version__`.
+
+Fork Usage
+----------
 
 .. code-block:: bash
 
     export PIP_FIND_LINKS=https://ddelange.github.io/psutil
+    pip install ...
     # OR
-    pip install --find-links=https://ddelange.github.io/psutil
+    pip install ... --find-links=https://ddelange.github.io/psutil
 
 -----
 
