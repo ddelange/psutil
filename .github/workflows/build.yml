@@ -24,8 +24,19 @@ on:
   release:
     types: [released, prereleased]
   workflow_dispatch:  # allows running workflow manually from the Actions tab
+permissions:
+  contents: write
 name: build
 jobs:
+  tag:
+    # additionally create a release for every commit to master
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ncipollo/release-action@v1
+        with:
+          commit: ${{ github.sha }}
+          tag: ${{ github.run_id }}
   # Linux + macOS + Windows CPython 3.6+
   cp36:
     name: cp36+, ${{ matrix.os }}, ${{ matrix.archs }}
@@ -75,6 +86,7 @@ jobs:
       if: github.event_name == 'release' || github.event_name == 'push'
       with:
         files: wheelhouse/*.whl
+        tag_name: ${{ github.event_name == 'release' && github.ref || github.run_id }}
 
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
@@ -174,6 +186,7 @@ jobs:
       if: github.event_name == 'release' || github.event_name == 'push'
       with:
         files: wheelhouse/*.whl
+        tag_name: ${{ github.event_name == 'release' && github.ref || github.run_id }}
 
     - name: Print hashes
       if: matrix.os == 'ubuntu-latest'
