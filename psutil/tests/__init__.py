@@ -21,6 +21,7 @@ import os
 import random
 import re
 import select
+import shlex
 import shutil
 import signal
 import socket
@@ -307,7 +308,7 @@ def spawn_testproc(cmd=None, **kwds):
     return it as a subprocess.Popen instance.
     If "cmd" is specified that is used instead of python.
     By default stdin and stdout are redirected to /dev/null.
-    It also attemps to make sure the process is in a reasonably
+    It also attempts to make sure the process is in a reasonably
     initialized state.
     The process is registered for cleanup on reap_children().
     """
@@ -450,14 +451,14 @@ def sh(cmd, **kwds):
     """run cmd in a subprocess and return its output.
     raises RuntimeError on error.
     """
-    shell = True if isinstance(cmd, (str, unicode)) else False
     # Prevents subprocess to open error dialogs in case of error.
-    flags = 0x8000000 if WINDOWS and shell else 0
-    kwds.setdefault("shell", shell)
+    flags = 0x8000000 if WINDOWS else 0
     kwds.setdefault("stdout", subprocess.PIPE)
     kwds.setdefault("stderr", subprocess.PIPE)
     kwds.setdefault("universal_newlines", True)
     kwds.setdefault("creationflags", flags)
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
     p = subprocess.Popen(cmd, **kwds)
     _subprocesses_started.add(p)
     if PY3:
@@ -562,7 +563,7 @@ def reap_children(recursive=False):
     """Terminate and wait() any subprocess started by this test suite
     and any children currently running, ensuring that no processes stick
     around to hog resources.
-    If resursive is True it also tries to terminate and wait()
+    If recursive is True it also tries to terminate and wait()
     all grandchildren started by this process.
     """
     # Get the children here before terminating them, as in case of

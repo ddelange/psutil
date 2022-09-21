@@ -9,7 +9,7 @@ TSCRIPT = psutil/tests/runner.py
 
 # Internal.
 DEPS = \
-	git+https://github.com/PyCQA/autoflake.git@refs/pull/107/head \
+	git+https://github.com/PyCQA/autoflake.git \
 	autopep8 \
 	check-manifest \
 	concurrencytest \
@@ -44,10 +44,11 @@ BUILD_OPTS = `$(PYTHON) -c \
 	print('--parallel %s' % cpus if cpus > 1 else '')"`
 # In not in a virtualenv, add --user options for install commands.
 INSTALL_OPTS = `$(PYTHON) -c \
-	"import sys; print('' if hasattr(sys, 'real_prefix') else '--user')"`
+	"import sys; print('' if hasattr(sys, 'real_prefix') or hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix else '--user')"`
 TEST_PREFIX = PYTHONWARNINGS=always PSUTIL_DEBUG=1
 
-all: help
+# if make is invoked with no arg, default to `make help`
+.DEFAULT_GOAL := help
 
 # ===================================================================
 # Install
@@ -75,17 +76,14 @@ clean:  ## Remove all build files.
 		docs/_build/ \
 		htmlcov/
 
-_:
-
-build: _  ## Compile (in parallel) without installing.
+.PHONY: build
+build:  ## Compile (in parallel) without installing.
 	@# "build_ext -i" copies compiled *.so files in ./psutil directory in order
 	@# to allow "import psutil" when using the interactive interpreter from
 	@# within  this directory.
 	PYTHONWARNINGS=all $(PYTHON) setup.py build_ext -i $(BUILD_OPTS)
 
 install:  ## Install this package as current user in "edit" mode.
-	# make sure setuptools is installed (needed for 'develop' / edit mode)
-	$(PYTHON) -c "import setuptools"
 	${MAKE} build
 	PYTHONWARNINGS=all $(PYTHON) setup.py develop $(INSTALL_OPTS)
 	$(PYTHON) -c "import psutil"  # make sure it actually worked
@@ -250,7 +248,7 @@ print-wheels:  ## Print downloaded wheels
 # ===================================================================
 
 git-tag-release:  ## Git-tag a new release.
-	git tag -a release-`python -c "import setup; print(setup.get_version())"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
+	git tag -a release-`python3 -c "import setup; print(setup.get_version())"` -m `git rev-list HEAD --count`:`git rev-parse --short HEAD`
 	git push --follow-tags
 
 sdist:  ## Create tar.gz source distribution.
@@ -272,8 +270,8 @@ check-sdist:  ## Create source distribution and checks its sanity (MANIFEST)
 	${MAKE} clean
 	$(PYTHON) -m virtualenv --clear --no-wheel --quiet build/venv
 	PYTHONWARNINGS=all $(PYTHON) setup.py sdist
-	build/venv/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
-	build/venv/bin/python -c "import os; os.chdir('build/venv'); import psutil"
+	build/venv/local/bin/python -m pip install -v --isolated --quiet dist/*.tar.gz
+	build/venv/local/bin/python -c "import os; os.chdir('build/venv'); import psutil"
 
 pre-release:  ## Check if we're ready to produce a new release.
 	${MAKE} check-sdist
@@ -295,7 +293,6 @@ pre-release:  ## Check if we're ready to produce a new release.
 		assert 'XXXX' not in history, 'XXXX in HISTORY.rst';"
 
 release:  ## Create a release (down/uploads tar.gz, wheels, git tag release).
-	$(PYTHON) -c "import subprocess, sys; out = subprocess.check_output('git diff --quiet && git diff --cached --quiet', shell=True).strip(); sys.exit('there are uncommitted changes:\n%s' % out) if out else 0 ;"
 	$(PYTHON) -m twine upload dist/*  # upload tar.gz and Windows wheels on PyPI
 	${MAKE} git-tag-release
 

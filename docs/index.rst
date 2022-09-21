@@ -735,19 +735,29 @@ Network
   - **speed**: the NIC speed expressed in mega bits (MB), if it can't be
     determined (e.g. 'localhost') it will be set to ``0``.
   - **mtu**: NIC's maximum transmission unit expressed in bytes.
+  - **flags**: a string of comma-separated flags on the interface (may be an empty string).
+    Possible flags are: ``up``, ``broadcast``, ``debug``, ``loopback``,
+    ``pointopoint``, ``notrailers``, ``running``, ``noarp``, ``promisc``,
+    ``allmulti``, ``master``, ``slave``, ``multicast``, ``portsel``,
+    ``dynamic``, ``oactive``, ``simplex``, ``link0``, ``link1``, ``link2``,
+    and ``d2`` (some flags are only available on certain platforms).
+
+    Availability: UNIX
 
   Example:
 
     >>> import psutil
     >>> psutil.net_if_stats()
-    {'eth0': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_FULL: 2>, speed=100, mtu=1500),
-     'lo': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_UNKNOWN: 0>, speed=0, mtu=65536)}
+    {'eth0': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_FULL: 2>, speed=100, mtu=1500, flags='up,broadcast,running,multicast'),
+     'lo': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_UNKNOWN: 0>, speed=0, mtu=65536, flags='up,loopback,running')}
 
   Also see `nettop.py`_ and `ifconfig.py`_ for an example application.
 
   .. versionadded:: 3.0.0
 
   .. versionchanged:: 5.7.3 `isup` on UNIX also checks whether the NIC is running.
+
+  .. versionchanged:: 5.9.3 *flags* field was added on POSIX.
 
 Sensors
 -------
@@ -1192,6 +1202,11 @@ Process class
     >>> psutil.Process().environ()
     {'LC_NUMERIC': 'it_IT.UTF-8', 'QT_QPA_PLATFORMTHEME': 'appmenu-qt5', 'IM_CONFIG_PHASE': '1', 'XDG_GREETER_DATA_DIR': '/var/lib/lightdm-data/giampaolo', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'XDG_CURRENT_DESKTOP': 'Unity', 'UPSTART_EVENTS': 'started starting', 'GNOME_KEYRING_PID': '', 'XDG_VTNR': '7', 'QT_IM_MODULE': 'ibus', 'LOGNAME': 'giampaolo', 'USER': 'giampaolo', 'PATH': '/home/giampaolo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/giampaolo/svn/sysconf/bin', 'LC_PAPER': 'it_IT.UTF-8', 'GNOME_KEYRING_CONTROL': '', 'GTK_IM_MODULE': 'ibus', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'LESS_TERMCAP_se': '\x1b[0m', 'TERM': 'xterm-256color', 'SHELL': '/bin/bash', 'XDG_SESSION_PATH': '/org/freedesktop/DisplayManager/Session0', 'XAUTHORITY': '/home/giampaolo/.Xauthority', 'LANGUAGE': 'en_US', 'COMPIZ_CONFIG_PROFILE': 'ubuntu', 'LC_MONETARY': 'it_IT.UTF-8', 'QT_LINUX_ACCESSIBILITY_ALWAYS_ON': '1', 'LESS_TERMCAP_me': '\x1b[0m', 'LESS_TERMCAP_md': '\x1b[01;38;5;74m', 'LESS_TERMCAP_mb': '\x1b[01;31m', 'HISTSIZE': '100000', 'UPSTART_INSTANCE': '', 'CLUTTER_IM_MODULE': 'xim', 'WINDOWID': '58786407', 'EDITOR': 'vim', 'SESSIONTYPE': 'gnome-session', 'XMODIFIERS': '@im=ibus', 'GPG_AGENT_INFO': '/home/giampaolo/.gnupg/S.gpg-agent:0:1', 'HOME': '/home/giampaolo', 'HISTFILESIZE': '100000', 'QT4_IM_MODULE': 'xim', 'GTK2_MODULES': 'overlay-scrollbar', 'XDG_SESSION_DESKTOP': 'ubuntu', 'SHLVL': '1', 'XDG_RUNTIME_DIR': '/run/user/1000', 'INSTANCE': 'Unity', 'LC_ADDRESS': 'it_IT.UTF-8', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'VTE_VERSION': '4205', 'GDMSESSION': 'ubuntu', 'MANDATORY_PATH': '/usr/share/gconf/ubuntu.mandatory.path', 'VISUAL': 'vim', 'DESKTOP_SESSION': 'ubuntu', 'QT_ACCESSIBILITY': '1', 'XDG_SEAT_PATH': '/org/freedesktop/DisplayManager/Seat0', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'LESSOPEN': '| /usr/bin/lesspipe %s', 'XDG_SESSION_ID': 'c2', 'DBUS_SESSION_BUS_ADDRESS': 'unix:abstract=/tmp/dbus-9GAJpvnt8r', '_': '/usr/bin/python', 'DEFAULTS_PATH': '/usr/share/gconf/ubuntu.default.path', 'LC_IDENTIFICATION': 'it_IT.UTF-8', 'LESS_TERMCAP_ue': '\x1b[0m', 'UPSTART_SESSION': 'unix:abstract=/com/ubuntu/upstart-session/1000/1294', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/usr/share/upstart/xdg:/etc/xdg', 'GTK_MODULES': 'gail:atk-bridge:unity-gtk-module', 'XDG_SESSION_TYPE': 'x11', 'PYTHONSTARTUP': '/home/giampaolo/.pythonstart', 'LC_NAME': 'it_IT.UTF-8', 'OLDPWD': '/home/giampaolo/svn/curio_giampaolo/tests', 'GDM_LANG': 'en_US', 'LC_TELEPHONE': 'it_IT.UTF-8', 'HISTCONTROL': 'ignoredups:erasedups', 'LC_MEASUREMENT': 'it_IT.UTF-8', 'PWD': '/home/giampaolo/svn/curio_giampaolo', 'JOB': 'gnome-session', 'LESS_TERMCAP_us': '\x1b[04;38;5;146m', 'UPSTART_JOB': 'unity-settings-daemon', 'LC_TIME': 'it_IT.UTF-8', 'LESS_TERMCAP_so': '\x1b[38;5;246m', 'PAGER': 'less', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'XDG_SEAT': 'seat0'}
 
+    .. note::
+      on macOS Big Sur this function returns something meaningful only for the
+      current process or in
+      `other specific circumstances <https://github.com/apple/darwin-xnu/blob/2ff845c2e033bd0ff64b5b6aa6063a1f8f65aa32/bsd/kern/kern_sysctl.c#L1315-L1321>`__).
+
     .. versionadded:: 4.0.0
     .. versionchanged:: 5.3.0 added SunOS support
     .. versionchanged:: 5.6.3 added AIX support
@@ -1594,7 +1609,7 @@ Process class
 
     Return a named tuple with variable fields depending on the platform
     representing memory information about the process.
-    The "portable" fields available on all plaforms are `rss` and `vms`.
+    The "portable" fields available on all platforms are `rss` and `vms`.
     All numbers are expressed in bytes.
 
     +---------+---------+-------+---------+-----+------------------------------+
@@ -2540,7 +2555,7 @@ FAQs
 ====
 
 * Q: Why do I get :class:`AccessDenied` for certain processes?
-* A: This may happen when you query processess owned by another user,
+* A: This may happen when you query processes owned by another user,
   especially on macOS (see `issue #883`_) and Windows.
   Unfortunately there's not much you can do about this except running the
   Python process with higher privileges.
@@ -2615,6 +2630,10 @@ Supported Python versions are 2.7, 3.4+ and PyPy3.
 Timeline
 ========
 
+- 2022-09-04:
+  `5.9.2 <https://pypi.org/project/psutil/5.9.2/#files>`__ -
+  `what's new <https://github.com/giampaolo/psutil/blob/master/HISTORY.rst#592>`__ -
+  `diff <https://github.com/giampaolo/psutil/compare/release-5.9.1...release-5.9.2#files_bucket>`__
 - 2022-05-20:
   `5.9.1 <https://pypi.org/project/psutil/5.9.1/#files>`__ -
   `what's new <https://github.com/giampaolo/psutil/blob/master/HISTORY.rst#591>`__ -

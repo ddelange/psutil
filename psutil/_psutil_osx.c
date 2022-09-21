@@ -405,18 +405,24 @@ psutil_proc_cmdline(PyObject *self, PyObject *args) {
 
 /*
  * Return process environment as a Python string.
+ * On Big Sur this function returns an empty string unless:
+ * * kernel is DEVELOPMENT || DEBUG
+ * * target process is same as current_proc()
+ * * target process is not cs_restricted
+ * * SIP is off
+ * * caller has an entitlement
  */
 static PyObject *
 psutil_proc_environ(PyObject *self, PyObject *args) {
     pid_t pid;
-    PyObject *py_retdict = NULL;
+    PyObject *py_str = NULL;
 
     if (! PyArg_ParseTuple(args, _Py_PARSE_PID, &pid))
         return NULL;
 
     // get the environment block, defined in arch/osx/process_info.c
-    py_retdict = psutil_get_environ(pid);
-    return py_retdict;
+    py_str = psutil_get_environ(pid);
+    return py_str;
 }
 
 
@@ -955,6 +961,10 @@ psutil_proc_open_files(PyObject *self, PyObject *args) {
     if (! PyArg_ParseTuple(args, _Py_PARSE_PID, &pid))
         goto error;
 
+    // see: https://github.com/giampaolo/psutil/issues/2116
+    if (pid == 0)
+        return py_retlist;
+
     fds_pointer = psutil_proc_list_fds(pid, &num_fds);
     if (fds_pointer == NULL)
         goto error;
@@ -1046,6 +1056,10 @@ psutil_proc_connections(PyObject *self, PyObject *args) {
                            &py_type_filter)) {
         goto error;
     }
+
+    // see: https://github.com/giampaolo/psutil/issues/2116
+    if (pid == 0)
+        return py_retlist;
 
     if (!PySequence_Check(py_af_filter) || !PySequence_Check(py_type_filter)) {
         PyErr_SetString(PyExc_TypeError, "arg 2 or 3 is not a sequence");
