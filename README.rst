@@ -65,8 +65,9 @@ This fork builds `more wheels <https://github.com/giampaolo/psutil/pull/2103>`__
 .. code-block:: bash
 
     export PIP_FIND_LINKS=https://ddelange.github.io/psutil
+    pip install ...
     # OR
-    pip install --find-links=https://ddelange.github.io/psutil
+    pip install ... --find-links=https://ddelange.github.io/psutil
 
 -----
 
