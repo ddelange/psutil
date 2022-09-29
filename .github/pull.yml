@@ -4,3 +4,4 @@ rules:
   - base: master
     upstream: giampaolo:master
     mergeMethod: merge
+    conflictReviewers: [ddelange]
