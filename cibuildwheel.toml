@@ -7,10 +7,7 @@ test-command = [
 ]
 
 [tool.cibuildwheel.macos]
-archs = ["x86_64", "universal2"]
-
-[tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = "10.9"
+archs = ["x86_64", "arm64"]
 
 [tool.cibuildwheel.windows]
 # psutil tests do not like running from a virtualenv with python>=3.7
