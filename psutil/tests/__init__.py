@@ -48,6 +48,7 @@ from psutil import POSIX
 from psutil import SUNOS
 from psutil import WINDOWS
 from psutil._common import bytes2human
+from psutil._common import memoize
 from psutil._common import print_color
 from psutil._common import supports_ipv6
 from psutil._compat import PY3
@@ -86,7 +87,7 @@ __all__ = [
     "HAS_IONICE", "HAS_MEMORY_MAPS", "HAS_PROC_CPU_NUM", "HAS_RLIMIT",
     "HAS_SENSORS_BATTERY", "HAS_BATTERY", "HAS_SENSORS_FANS",
     "HAS_SENSORS_TEMPERATURES", "HAS_MEMORY_FULL_INFO", "MACOS_11PLUS",
-    "QEMU_USER",
+    "QEMU_USER", "MACOS_12PLUS",
     # subprocesses
     'pyrun', 'terminate', 'reap_children', 'spawn_testproc', 'spawn_zombie',
     'spawn_children_pair',
@@ -135,6 +136,35 @@ if MACOS:
     MACOS_11PLUS = tuple(map(int, _macos_version.split(".")[:2])) > (10, 15)
 else:
     MACOS_11PLUS = False
+
+
+@memoize
+def macos_version():
+    version_str = platform.mac_ver()[0]
+    version = tuple(map(int, version_str.split(".")[:2]))
+    if version == (10, 16):
+        # When built against an older macOS SDK, Python will report
+        # macOS 10.16 instead of the real version.
+        version_str = subprocess.check_output(
+            [
+                sys.executable,
+                "-sS",
+                "-c",
+                "import platform; print(platform.mac_ver()[0])",
+            ],
+            env={"SYSTEM_VERSION_COMPAT": "0"},
+            universal_newlines=True,
+        )
+        version = tuple(map(int, version_str.split(".")[:2]))
+    return version
+
+
+if MACOS:
+    MACOS_11PLUS = macos_version() > (10, 15)
+    MACOS_12PLUS = macos_version() >= (12, 0)
+else:
+    MACOS_11PLUS = False
+    MACOS_12PLUS = False
 
 
 # --- configurable defaults

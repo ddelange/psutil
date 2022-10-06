@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: macos-11, archs: "x86_64 universal2"}
+          - {os: macos-12, archs: "x86_64 universal2"}
           - {os: ubuntu-20.04, archs: "x86_64 i686"}
           - {os: ubuntu-20.04, archs: "aarch64"}
           - {os: windows-2019, archs: "AMD64 x86"}
@@ -148,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-12]
     env:
       CIBW_TEST_COMMAND:
         PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/runner.py &&

@@ -1443,7 +1443,10 @@ class TestProcess(PsutilTestCase):
 
     @unittest.skipIf(not HAS_ENVIRON, "not supported")
     @unittest.skipIf(not POSIX, "POSIX only")
-    @unittest.skipIf(MACOS_11PLUS, "macOS 11+ not supported, issue #2084")
+    @unittest.skipIf(
+        MACOS_11PLUS,
+        "macOS 11+ can't get another process environment, issue #2084"
+    )
     def test_weird_environ(self):
         # environment variables can contain values without an equals sign
         code = textwrap.dedent("""
