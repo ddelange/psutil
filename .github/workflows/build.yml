@@ -39,8 +39,8 @@ jobs:
           tag: ${{ github.run_id }}
           generateReleaseNotes: true
   # Linux + macOS + Windows CPython 3.6+
-  cp36:
-    name: cp36+, ${{ matrix.os }}, ${{ matrix.archs }}
+  py3:
+    name: py3, ${{ matrix.os }}, ${{ matrix.archs }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -70,7 +70,7 @@ jobs:
       if: matrix.archs == 'aarch64'
 
     - name: Run tests
-      uses: pypa/cibuildwheel@v2.10.2
+      uses: pypa/cibuildwheel@v2.11.1
       with:
         config-file: "./cibuildwheel.toml"
       env:
@@ -101,15 +101,15 @@ jobs:
   # Windows cp37+ tests
   # psutil tests do not like running from a virtualenv with python>=3.7 so
   # not using cibuildwheel for those. run them "manually" with this job.
-  windows-cp3-test:
-    name: windows tests ${{ matrix.python }} ${{ matrix.architecture }}
-    needs: cp36
+  windows-py3-test:
+    name: windows-py3-test-${{ matrix.python }}-${{ matrix.architecture }}
+    needs: py3
     runs-on: windows-2019
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+        python: ["3.7", "3.8", "3.9", "3.10", "~3.11.0-0"]
         architecture: ["x86", "x64"]
 
     steps:
@@ -118,7 +118,7 @@ jobs:
       with:
         access_token: ${{ github.token }}
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: "${{ matrix.python }}"
         architecture: "${{ matrix.architecture }}"
@@ -141,9 +141,9 @@ jobs:
         python ../psutil/tests/test_memleaks.py
       shell: bash
 
-  # Linux + macOS + CPython 2.7 & 3.5
-  linux-macos-cp27-cp35:
-    name: cp27/cp35, ${{ matrix.os }}
+  # Linux + macOS + Python 2
+  linux-macos-py2:
+    name: ${{ matrix.os }}-py2
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -155,8 +155,7 @@ jobs:
         PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/runner.py &&
         PYTHONWARNINGS=always PYTHONUNBUFFERED=1 PSUTIL_DEBUG=1 python {project}/psutil/tests/test_memleaks.py
       CIBW_TEST_EXTRAS: test
-      CIBW_BUILD: 'cp27-* cp35-*'
-      CIBW_SKIP: 'cp35-macosx_x86_64'
+      CIBW_BUILD: 'cp27-*'
 
     steps:
     - name: Cancel previous runs
@@ -171,11 +170,8 @@ jobs:
         cache: pip
         cache-dependency-path: .github/workflows/build.yml
 
-    - name: Install cibuildwheel
-      run: pip install cibuildwheel==1.12.0
-
     - name: Run tests
-      run: cibuildwheel .
+      uses: pypa/cibuildwheel@v1.12.0
 
     - name: Create wheels
       uses: actions/upload-artifact@v3
@@ -202,7 +198,7 @@ jobs:
   gh-pages:
     # only run when action-gh-release ran
     if: github.event_name == 'release' || github.event_name == 'push'
-    needs: [cp36, linux-macos-cp27-cp35]
+    needs: [py3, linux-macos-py2]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
@@ -262,6 +258,6 @@ jobs:
         # py3
         python3 -m pip install flake8 isort
         python3 -m flake8 .
-        python3 -m isort --settings=.isort.cfg .
+        python3 -m isort .
         # clinter
         find . -type f \( -iname "*.c" -o -iname "*.h" \) | xargs python3 scripts/internal/clinter.py

@@ -31,6 +31,12 @@ with warnings.catch_warnings():
         setuptools = None
         from distutils.core import Extension
         from distutils.core import setup
+    try:
+        from wheel.bdist_wheel import bdist_wheel
+    except ImportError:
+        if "CIBUILDWHEEL" in os.environ:
+            raise
+        bdist_wheel = None
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -53,6 +59,9 @@ from _compat import which  # NOQA
 
 
 PYPY = '__pypy__' in sys.builtin_module_names
+PY36_PLUS = sys.version_info[:2] >= (3, 6)
+CP36_PLUS = PY36_PLUS and sys.implementation.name == "cpython"
+
 macros = []
 if POSIX:
     macros.append(("PSUTIL_POSIX", 1))
@@ -100,9 +109,7 @@ def get_version():
 VERSION = get_version()
 macros.append(('PSUTIL_VERSION', int(VERSION.replace('.', ''))))
 
-PY36_PLUS = sys.version_info[:2] >= (3, 6)
-CP36_PLUS = PY36_PLUS and sys.implementation.name == "cpython"
-if CP36_PLUS and (MACOS or LINUX or WINDOWS):
+if bdist_wheel and CP36_PLUS and (MACOS or LINUX or WINDOWS):
     py_limited_api = {"py_limited_api": True}
     macros.append(('Py_LIMITED_API', '0x03060000'))
 else:
@@ -360,15 +367,9 @@ else:
 
 cmdclass = {}
 if py_limited_api:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-
-    class bdist_wheel_abi3(_bdist_wheel):
-        def finalize_options(self):
-            _bdist_wheel.finalize_options(self)
-            self.root_is_pure = False
-
+    class bdist_wheel_abi3(bdist_wheel):
         def get_tag(self):
-            python, abi, plat = _bdist_wheel.get_tag(self)
+            python, abi, plat = bdist_wheel.get_tag(self)
             return python, "abi3", plat
 
     cmdclass["bdist_wheel"] = bdist_wheel_abi3
