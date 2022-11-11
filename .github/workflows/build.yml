@@ -59,18 +59,16 @@ jobs:
         access_token: ${{ github.token }}
 
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
-        python-version: 3.9
-        cache: pip
-        cache-dependency-path: .github/workflows/build.yml
+        python-version: 3.11
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
       if: matrix.archs == 'aarch64'
 
     - name: Run tests
-      uses: pypa/cibuildwheel@v2.11.1
+      uses: pypa/cibuildwheel@v2.11.2
       with:
         config-file: "./cibuildwheel.toml"
       env:
@@ -124,8 +122,6 @@ jobs:
       with:
         python-version: "${{ matrix.python }}"
         architecture: "${{ matrix.architecture }}"
-        cache: pip
-        cache-dependency-path: .github/workflows/build.yml
 
     - name: Download wheels
       uses: actions/download-artifact@v3
@@ -168,11 +164,9 @@ jobs:
         access_token: ${{ github.token }}
 
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: 3.9
-        cache: pip
-        cache-dependency-path: .github/workflows/build.yml
 
     - name: Run tests
       uses: pypa/cibuildwheel@v1.12.0
@@ -221,7 +215,7 @@ jobs:
     runs-on: macos-12
     steps:
     - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.6.0
+      uses: styfle/cancel-workflow-action@0.9.1
       with:
         access_token: ${{ github.token }}
 
@@ -248,10 +242,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-      with:
-        cache: pip
-        cache-dependency-path: .github/workflows/build.yml
+    - uses: actions/setup-python@v4
     - name: 'Run linters'
       run: |
         # py2
@@ -265,3 +256,14 @@ jobs:
         python3 -m isort .
         # clinter
         find . -type f \( -iname "*.c" -o -iname "*.h" \) | xargs python3 scripts/internal/clinter.py
+
+  check_dist:
+    name: Check dist
+    needs: [linux-macos-py2, py3]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: wheelhouse
+      - run: pipx run twine check --strict wheelhouse/*
