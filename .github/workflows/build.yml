@@ -100,7 +100,7 @@ jobs:
   # psutil tests do not like running from a virtualenv with python>=3.7 so
   # not using cibuildwheel for those. run them "manually" with this job.
   windows-py3-test:
-    name: windows-py3-test-${{ matrix.python }}-${{ matrix.architecture }}
+    name: py3-windows-test-${{ matrix.python }}-${{ matrix.architecture }}
     needs: py3
     runs-on: windows-2019
     timeout-minutes: 20
@@ -143,7 +143,7 @@ jobs:
 
   # Linux + macOS + Python 2
   linux-macos-py2:
-    name: ${{ matrix.os }}-py2
+    name: py2-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
