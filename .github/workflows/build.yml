@@ -67,14 +67,14 @@ jobs:
       uses: docker/setup-qemu-action@v1
       if: matrix.archs == 'aarch64'
 
-    - name: Run tests
+    - name: Create wheels + run tests
       uses: pypa/cibuildwheel@v2.11.2
       with:
         config-file: "./cibuildwheel.toml"
       env:
         CIBW_ARCHS: ${{ matrix.archs }}
 
-    - name: Create wheels
+    - name: Upload wheels
       uses: actions/upload-artifact@v3
       with:
         name: wheels
@@ -87,19 +87,18 @@ jobs:
         files: wheelhouse/*.whl
         tag_name: ${{ github.event_name == 'release' && github.ref || github.run_id }}
 
-    - name: Print hashes
+    - name: Generate .tar.gz
       if: matrix.os == 'ubuntu-latest'
       run: |
         pip install -U wheel
         make generate-manifest
         python setup.py sdist
         mv dist/psutil*.tar.gz wheelhouse/
-        python scripts/internal/print_hashes.py wheelhouse/
 
   # Windows cp37+ tests
   # psutil tests do not like running from a virtualenv with python>=3.7 so
   # not using cibuildwheel for those. run them "manually" with this job.
-  windows-py3-test:
+  py3-windows-tests:
     name: py3-windows-test-${{ matrix.python }}-${{ matrix.architecture }}
     needs: py3
     runs-on: windows-2019
@@ -107,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "~3.11.0-0"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         architecture: ["x86", "x64"]
 
     steps:
@@ -142,7 +141,7 @@ jobs:
       shell: bash
 
   # Linux + macOS + Python 2
-  linux-macos-py2:
+  py2:
     name: py2-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
@@ -168,10 +167,10 @@ jobs:
       with:
         python-version: 3.9
 
-    - name: Run tests
+    - name: Create wheels + run tests
       uses: pypa/cibuildwheel@v1.12.0
 
-    - name: Create wheels
+    - name: Upload wheels
       uses: actions/upload-artifact@v3
       with:
         name: wheels
@@ -184,19 +183,18 @@ jobs:
         files: wheelhouse/*.whl
         tag_name: ${{ github.event_name == 'release' && github.ref || github.run_id }}
 
-    - name: Print hashes
+    - name: Generate .tar.gz
       if: matrix.os == 'ubuntu-latest'
       run: |
         pip install -U wheel
         make generate-manifest
         python setup.py sdist
         mv dist/psutil*.tar.gz wheelhouse/
-        python scripts/internal/print_hashes.py wheelhouse/
 
   gh-pages:
     # only run when action-gh-release ran
     if: github.event_name == 'release' || github.event_name == 'push'
-    needs: [py3, linux-macos-py2]
+    needs: [py3, py2]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
@@ -211,7 +209,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
 
-  freebsd:
+  # FreeBSD (tests only)
+  py3-freebsd:
     runs-on: macos-12
     steps:
     - name: Cancel previous runs
@@ -238,6 +237,7 @@ jobs:
           python3 psutil/tests/runner.py
           python3 psutil/tests/test_memleaks.py
 
+  # Run linters
   linters:
     runs-on: ubuntu-latest
     steps:
@@ -257,13 +257,19 @@ jobs:
         # clinter
         find . -type f \( -iname "*.c" -o -iname "*.h" \) | xargs python3 scripts/internal/clinter.py
 
-  check_dist:
-    name: Check dist
-    needs: [linux-macos-py2, py3]
+  # Check sanity of .tar.gz + wheel files
+  check-dist:
+    needs: [py2, py3]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
       - uses: actions/download-artifact@v3
         with:
           name: wheels
           path: wheelhouse
-      - run: pipx run twine check --strict wheelhouse/*
+      - run: |
+          python scripts/internal/print_hashes.py wheelhouse/
+          pipx run twine check --strict wheelhouse/*
