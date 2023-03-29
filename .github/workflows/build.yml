@@ -95,51 +95,6 @@ jobs:
         python setup.py sdist
         mv dist/psutil*.tar.gz wheelhouse/
 
-  # Windows cp37+ tests
-  # psutil tests do not like running from a virtualenv with python>=3.7 so
-  # not using cibuildwheel for those. run them "manually" with this job.
-  py3-windows-tests:
-    name: py3-windows-test-${{ matrix.python }}-${{ matrix.architecture }}
-    needs: py3
-    runs-on: windows-2019
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-        architecture: ["x86", "x64"]
-
-    steps:
-    - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        access_token: ${{ github.token }}
-
-    - uses: actions/checkout@v3
-
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "${{ matrix.python }}"
-        architecture: "${{ matrix.architecture }}"
-
-    - name: Download wheels
-      uses: actions/download-artifact@v3
-      with:
-        name: wheels
-        path: wheelhouse
-
-    - name: Run tests
-      run: |
-        mkdir .tests
-        cd .tests
-        pip install $(find ../wheelhouse -name '*-cp36-abi3-${{ matrix.architecture == 'x86' && 'win32' || 'win_amd64'}}.whl')[test]
-        export PYTHONWARNINGS=always
-        export PYTHONUNBUFFERED=1
-        export PSUTIL_DEBUG=1
-        python ../psutil/tests/runner.py
-        python ../psutil/tests/test_memleaks.py
-      shell: bash
-
   # Linux + macOS + Python 2
   py2:
     name: py2-${{ matrix.os }}
