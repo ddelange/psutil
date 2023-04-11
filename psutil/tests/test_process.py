@@ -232,7 +232,7 @@ class TestProcess(PsutilTestCase):
         p = psutil.Process()
         p.cpu_percent(interval=0.001)
         p.cpu_percent(interval=0.001)
-        for x in range(100):
+        for _ in range(100):
             percent = p.cpu_percent(interval=None)
             self.assertIsInstance(percent, float)
             self.assertGreaterEqual(percent, 0.0)
@@ -614,8 +614,7 @@ class TestProcess(PsutilTestCase):
     def test_memory_maps(self):
         p = psutil.Process()
         maps = p.memory_maps()
-        paths = [x for x in maps]
-        self.assertEqual(len(paths), len(set(paths)))
+        self.assertEqual(len(maps), len(set(maps)))
         ext_maps = p.memory_maps(grouped=False)
 
         for nt in maps:
@@ -1050,7 +1049,7 @@ class TestProcess(PsutilTestCase):
     def test_num_ctx_switches(self):
         p = psutil.Process()
         before = sum(p.num_ctx_switches())
-        for x in range(500000):
+        for _ in range(500000):
             after = sum(p.num_ctx_switches())
             if after > before:
                 return
@@ -1163,7 +1162,7 @@ class TestProcess(PsutilTestCase):
     def test_suspend_resume(self):
         p = self.spawn_psproc()
         p.suspend()
-        for x in range(100):
+        for _ in range(100):
             if p.status() == psutil.STATUS_STOPPED:
                 break
             time.sleep(0.01)
