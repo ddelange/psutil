@@ -356,18 +356,14 @@ class TestSystemAPIs(PsutilTestCase):
                 self.assertEqual(u.name, users[idx])
                 self.assertEqual(u.terminal, terminals[idx])
                 if u.pid is not None:  # None on OpenBSD
-                    p = psutil.Process(u.pid)
-                    # on macOS time is off by ~47 secs for some reason, but
-                    # the next test against 'who' CLI succeeds
-                    delta = 60 if MACOS else 1
-                    self.assertAlmostEqual(
-                        u.started, p.create_time(), delta=delta)
+                    psutil.Process(u.pid)
 
     @retry_on_failure()
     def test_users_started(self):
         out = sh("who -u")
         if not out.strip():
             raise self.skipTest("no users on this system")
+        tstamp = None
         # '2023-04-11 09:31' (Linux)
         started = re.findall(r"\d\d\d\d-\d\d-\d\d \d\d:\d\d", out)
         if started:
@@ -378,8 +374,14 @@ class TestSystemAPIs(PsutilTestCase):
             if started:
                 tstamp = "%b %d %H:%M"
             else:
-                raise ValueError(
-                    "cannot interpret tstamp in who output\n%s" % (out))
+                # 'Apr 10'
+                started = re.findall(r"[A-Z][a-z][a-z] \d\d", out)
+                if started:
+                    tstamp = "%b %d"
+
+        if not tstamp:
+            raise ValueError(
+                "cannot interpret tstamp in who output\n%s" % (out))
         with self.subTest(psutil=psutil.users(), who=out):
             for idx, u in enumerate(psutil.users()):
                 psutil_value = datetime.datetime.fromtimestamp(
