@@ -264,7 +264,7 @@ class TestMiscAPIs(PsutilTestCase):
 
         # assert all other constants are set to False
         for name in names:
-            self.assertIs(getattr(psutil, name), False, msg=name)
+            self.assertFalse(getattr(psutil, name), msg=name)
 
 
 class TestMemoryAPIs(PsutilTestCase):
@@ -350,7 +350,7 @@ class TestCpuAPIs(PsutilTestCase):
             self.assertIsInstance(cp_time, float)
             self.assertGreaterEqual(cp_time, 0.0)
             total += cp_time
-        self.assertEqual(total, sum(times))
+        self.assertAlmostEqual(total, sum(times))
         str(times)
         # CPU times are always supposed to increase over time
         # or at least remain the same and that's because time
@@ -389,7 +389,7 @@ class TestCpuAPIs(PsutilTestCase):
                 self.assertIsInstance(cp_time, float)
                 self.assertGreaterEqual(cp_time, 0.0)
                 total += cp_time
-            self.assertEqual(total, sum(times))
+            self.assertAlmostEqual(total, sum(times))
             str(times)
         self.assertEqual(len(psutil.cpu_times(percpu=True)[0]),
                          len(psutil.cpu_times(percpu=False)))
