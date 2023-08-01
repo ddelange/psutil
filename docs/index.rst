@@ -38,7 +38,7 @@ psutil currently supports the following platforms:
 - **Sun Solaris**
 - **AIX**
 
-Supported Python versions are **2.7** and **3.4+**.
+Supported Python versions are **2.7** and **3.6+**.
 `PyPy <http://pypy.org/>`__ is also known to work.
 
 The psutil documentation you're reading is distributed as a single HTML page.
@@ -176,6 +176,10 @@ CPU
   utilization as a percentage for each CPU.
   First element of the list refers to first CPU, second element to second CPU
   and so on. The order of the list is consistent across calls.
+  Internally this function maintains a global map (a dict) where each key is
+  the ID of the calling thread (`threading.get_ident`_). This means it can be
+  called from different threads, at different intervals, and still return
+  meaningful and independent results.
 
     >>> import psutil
     >>> # blocking
@@ -194,6 +198,8 @@ CPU
     it will return a meaningless ``0.0`` value which you are supposed to
     ignore.
 
+  .. versionchanged:: 5.9.6 function is now thread safe.
+
 .. function:: cpu_times_percent(interval=None, percpu=False)
 
   Same as :func:`cpu_percent()` but provides utilization percentages for each
@@ -211,6 +217,8 @@ CPU
 
   .. versionchanged::
     4.1.0 two new *interrupt* and *dpc* fields are returned on Windows.
+
+  .. versionchanged:: 5.9.6 function is now thread safe.
 
 .. function:: cpu_count(logical=True)
 
@@ -2619,6 +2627,7 @@ If you want to develop psutil take a look at the `development guide`_.
 Platforms support history
 =========================
 
+* psutil 5.9.6 (XXXX-XX): drop Python 3.4 and 3.5 support
 * psutil 5.9.1 (2022-05): drop Python 2.6 support
 * psutil 5.9.0 (2021-12): **MidnightBSD**
 * psutil 5.8.0 (2020-12): **PyPy 2** on Windows
@@ -2632,7 +2641,7 @@ Platforms support history
 * psutil 0.1.1 (2009-03): **FreeBSD**
 * psutil 0.1.0 (2009-01): **Linux, Windows, macOS**
 
-Supported Python versions are 2.7, 3.4+ and PyPy3.
+Supported Python versions are 2.7, 3.6+ and PyPy3.
 
 Timeline
 ========
@@ -3052,6 +3061,7 @@ Timeline
 .. _`subprocess.Popen`: https://docs.python.org/3/library/subprocess.html#subprocess.Popen
 .. _`temperatures.py`: https://github.com/giampaolo/psutil/blob/master/scripts/temperatures.py
 .. _`TerminateProcess`: https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/nf-processthreadsapi-terminateprocess
+.. _`threading.get_ident`: https://docs.python.org/3/library/threading.html#threading.get_ident
 .. _`threading.Thread`: https://docs.python.org/3/library/threading.html#threading.Thread
 .. _Tidelift security contact: https://tidelift.com/security
 .. _Tidelift Subscription: https://tidelift.com/subscription/pkg/pypi-psutil?utm_source=pypi-psutil&utm_medium=referral&utm_campaign=readme
