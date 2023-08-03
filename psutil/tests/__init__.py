@@ -43,6 +43,8 @@ import psutil
 from psutil import AIX
 from psutil import LINUX
 from psutil import MACOS
+from psutil import NETBSD
+from psutil import OPENBSD
 from psutil import POSIX
 from psutil import SUNOS
 from psutil import WINDOWS
@@ -962,6 +964,65 @@ class PsutilTestCase(TestCase):
             proc.wait(timeout=0)  # assert not raise TimeoutExpired
         assert not psutil.pid_exists(proc.pid), proc.pid
         self.assertNotIn(proc.pid, psutil.pids())
+
+    def assertProcessZombie(self, proc):
+        # A zombie process should always be instantiable.
+        clone = psutil.Process(proc.pid)
+        # Cloned zombie on Open/NetBSD has null creation time, see:
+        # https://github.com/giampaolo/psutil/issues/2287
+        self.assertEqual(proc, clone)
+        if not (OPENBSD or NETBSD):
+            self.assertEqual(hash(proc), hash(clone))
+        # Its status always be querable.
+        self.assertEqual(proc.status(), psutil.STATUS_ZOMBIE)
+        # It should be considered 'running'.
+        assert proc.is_running()
+        assert psutil.pid_exists(proc.pid)
+        # as_dict() shouldn't crash.
+        proc.as_dict()
+        # It should show up in pids() and process_iter().
+        self.assertIn(proc.pid, psutil.pids())
+        self.assertIn(proc.pid, [x.pid for x in psutil.process_iter()])
+        psutil._pmap = {}
+        self.assertIn(proc.pid, [x.pid for x in psutil.process_iter()])
+        # Call all methods.
+        ns = process_namespace(proc)
+        for fun, name in ns.iter(ns.all):
+            with self.subTest(name):
+                try:
+                    fun()
+                except (psutil.ZombieProcess, psutil.AccessDenied):
+                    pass
+        if LINUX:
+            # https://github.com/giampaolo/psutil/pull/2288
+            self.assertRaises(psutil.ZombieProcess, proc.cmdline)
+            self.assertRaises(psutil.ZombieProcess, proc.exe)
+            self.assertRaises(psutil.ZombieProcess, proc.memory_maps)
+        # Zombie cannot be signaled or terminated.
+        proc.suspend()
+        proc.resume()
+        proc.terminate()
+        proc.kill()
+        assert proc.is_running()
+        assert psutil.pid_exists(proc.pid)
+        self.assertIn(proc.pid, psutil.pids())
+        self.assertIn(proc.pid, [x.pid for x in psutil.process_iter()])
+        psutil._pmap = {}
+        self.assertIn(proc.pid, [x.pid for x in psutil.process_iter()])
+
+        # Its parent should 'see' it (edit: not true on BSD and MACOS).
+        # descendants = [x.pid for x in psutil.Process().children(
+        #                recursive=True)]
+        # self.assertIn(proc.pid, descendants)
+
+        # __eq__ can't be relied upon because creation time may not be
+        # querable.
+        # self.assertEqual(proc, psutil.Process(proc.pid))
+
+        # XXX should we also assume ppid() to be usable? Note: this
+        # would be an important use case as the only way to get
+        # rid of a zombie is to kill its parent.
+        # self.assertEqual(proc.ppid(), os.getpid())
 
 
 @unittest.skipIf(PYPY, "unreliable on PYPY")

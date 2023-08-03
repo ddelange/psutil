@@ -1335,40 +1335,8 @@ class TestProcess(PsutilTestCase):
 
     @unittest.skipIf(not POSIX, 'POSIX only')
     def test_zombie_process(self):
-        def succeed_or_zombie_p_exc(fun):
-            try:
-                return fun()
-            except (psutil.ZombieProcess, psutil.AccessDenied):
-                pass
-
         parent, zombie = self.spawn_zombie()
-        # A zombie process should always be instantiable
-        zproc = psutil.Process(zombie.pid)
-        # ...and at least its status always be querable
-        self.assertEqual(zproc.status(), psutil.STATUS_ZOMBIE)
-        # ...and it should be considered 'running'
-        assert zproc.is_running()
-        # ...and as_dict() shouldn't crash
-        zproc.as_dict()
-        # ...its parent should 'see' it (edit: not true on BSD and MACOS
-        # descendants = [x.pid for x in psutil.Process().children(
-        #                recursive=True)]
-        # self.assertIn(zpid, descendants)
-        # XXX should we also assume ppid be usable?  Note: this
-        # would be an important use case as the only way to get
-        # rid of a zombie is to kill its parent.
-        # self.assertEqual(zpid.ppid(), os.getpid())
-        # ...and all other APIs should be able to deal with it
-
-        ns = process_namespace(zproc)
-        for fun, name in ns.iter(ns.all):
-            succeed_or_zombie_p_exc(fun)
-
-        assert psutil.pid_exists(zproc.pid)
-        self.assertIn(zproc.pid, psutil.pids())
-        self.assertIn(zproc.pid, [x.pid for x in psutil.process_iter()])
-        psutil._pmap = {}
-        self.assertIn(zproc.pid, [x.pid for x in psutil.process_iter()])
+        self.assertProcessZombie(zombie)
 
     @unittest.skipIf(not POSIX, 'POSIX only')
     def test_zombie_process_is_running_w_exc(self):

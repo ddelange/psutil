@@ -30,9 +30,9 @@ from psutil import OPENBSD
 from psutil import POSIX
 from psutil import SUNOS
 from psutil import WINDOWS
+from psutil._compat import PY3
 from psutil._compat import FileNotFoundError
 from psutil._compat import long
-from psutil._compat import PY3
 from psutil.tests import ASCII_FS
 from psutil.tests import CI_TESTING
 from psutil.tests import DEVNULL
@@ -72,6 +72,11 @@ class TestProcessAPIs(PsutilTestCase):
         p.kill()
         p.wait()
         self.assertNotIn(sproc.pid, [x.pid for x in psutil.process_iter()])
+
+        # assert there are no duplicates
+        ls = [x for x in psutil.process_iter()]
+        self.assertEqual(sorted(ls, key=lambda x: x.pid),
+                         sorted(set(ls), key=lambda x: x.pid))
 
         with mock.patch('psutil.Process',
                         side_effect=psutil.NoSuchProcess(os.getpid())):

@@ -125,8 +125,8 @@ install-pip:  ## Install pip (no-op if already installed).
 setup-dev-env:  ## Install GIT hooks, pip, test deps (also upgrades them).
 	${MAKE} install-git-hooks
 	${MAKE} install-pip
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade --trusted-host files.pythonhosted.org pip
-	$(PYTHON) -m pip install $(INSTALL_OPTS) --upgrade --trusted-host files.pythonhosted.org $(PY_DEPS)
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade pip
+	$(PYTHON) -m pip install $(INSTALL_OPTS) --trusted-host files.pythonhosted.org --trusted-host pypi.org --upgrade $(PY_DEPS)
 
 # ===================================================================
 # Tests
@@ -180,7 +180,7 @@ test-memleaks:  ## Memory leak tests.
 	${MAKE} build
 	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT) $(ARGS) psutil/tests/test_memleaks.py
 
-test-failed:  ## Re-run tests which failed on last run
+test-last-failed:  ## Re-run tests which failed on last run
 	${MAKE} build
 	$(TEST_PREFIX) $(PYTHON) $(TSCRIPT) $(ARGS) --last-failed
 
