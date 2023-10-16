@@ -6,7 +6,7 @@
 
 """Contracts tests. These tests mainly check API sanity in terms of
 returned types and APIs availability.
-Some of these are duplicates of tests test_system.py and test_process.py
+Some of these are duplicates of tests test_system.py and test_process.py.
 """
 
 import errno
@@ -196,7 +196,7 @@ class TestAvailProcessAPIs(PsutilTestCase):
     def test_memory_maps(self):
         hasit = hasattr(psutil.Process, "memory_maps")
         self.assertEqual(
-            hasit, False if OPENBSD or NETBSD or AIX or MACOS else True)
+            hasit, not (OPENBSD or NETBSD or AIX or MACOS))
 
 
 # ===================================================================
@@ -207,7 +207,7 @@ class TestAvailProcessAPIs(PsutilTestCase):
 class TestSystemAPITypes(PsutilTestCase):
     """Check the return types of system related APIs.
     Mainly we want to test we never return unicode on Python 2, see:
-    https://github.com/giampaolo/psutil/issues/1039
+    https://github.com/giampaolo/psutil/issues/1039.
     """
 
     @classmethod
@@ -299,7 +299,7 @@ class TestSystemAPITypes(PsutilTestCase):
     @unittest.skipIf(not HAS_NET_IO_COUNTERS, 'not supported')
     def test_net_io_counters(self):
         # Duplicate of test_system.py. Keep it anyway.
-        for ifname, _ in psutil.net_io_counters(pernic=True).items():
+        for ifname in psutil.net_io_counters(pernic=True):
             self.assertIsInstance(ifname, str)
 
     @unittest.skipIf(not HAS_SENSORS_FANS, "not supported")
@@ -368,6 +368,7 @@ def proc_info(pid):
         elif isinstance(exc, psutil.NoSuchProcess):
             tcase.assertProcessGone(proc)
         str(exc)
+        repr(exc)
 
     def do_wait():
         if pid != 0:
@@ -378,23 +379,27 @@ def proc_info(pid):
 
     try:
         proc = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        tcase.assertPidGone(pid)
+        return {}
+    try:
         d = proc.as_dict(['ppid', 'name'])
     except psutil.NoSuchProcess:
-        return {}
-
-    name, ppid = d['name'], d['ppid']
-    info = {'pid': proc.pid}
-    ns = process_namespace(proc)
-    # We don't use oneshot() because in order not to fool
-    # check_exception() in case of NSP.
-    for fun, fun_name in ns.iter(ns.getters, clear_cache=False):
-        try:
-            info[fun_name] = fun()
-        except psutil.Error as exc:
-            check_exception(exc, proc, name, ppid)
-            continue
-    do_wait()
-    return info
+        tcase.assertProcessGone(proc)
+    else:
+        name, ppid = d['name'], d['ppid']
+        info = {'pid': proc.pid}
+        ns = process_namespace(proc)
+        # We don't use oneshot() because in order not to fool
+        # check_exception() in case of NSP.
+        for fun, fun_name in ns.iter(ns.getters, clear_cache=False):
+            try:
+                info[fun_name] = fun()
+            except psutil.Error as exc:
+                check_exception(exc, proc, name, ppid)
+                continue
+        do_wait()
+        return info
 
 
 @serialrun
@@ -404,7 +409,7 @@ class TestFetchAllProcesses(PsutilTestCase):
     Uses a process pool to get info about all processes.
     """
 
-    use_proc_pool = not CI_TESTING
+    use_proc_pool = 0
 
     def setUp(self):
         # Using a pool in a CI env may result in deadlock, see:
@@ -440,9 +445,9 @@ class TestFetchAllProcesses(PsutilTestCase):
                 meth = getattr(self, name)
                 try:
                     meth(value, info)
-                except AssertionError:
+                except Exception:
                     s = '\n' + '=' * 70 + '\n'
-                    s += "FAIL: test_%s pid=%s, ret=%s\n" % (
+                    s += "FAIL: name=test_%s, pid=%s, ret=%s\n" % (
                         name, info['pid'], repr(value))
                     s += '-' * 70
                     s += "\n%s" % traceback.format_exc()
@@ -485,6 +490,7 @@ class TestFetchAllProcesses(PsutilTestCase):
     def ppid(self, ret, info):
         self.assertIsInstance(ret, (int, long))
         self.assertGreaterEqual(ret, 0)
+        proc_info(ret)
 
     def name(self, ret, info):
         self.assertIsInstance(ret, (str, unicode))
@@ -667,8 +673,7 @@ class TestFetchAllProcesses(PsutilTestCase):
             try:
                 st = os.stat(ret)
             except OSError as err:
-                if WINDOWS and err.errno in \
-                        psutil._psplatform.ACCESS_DENIED_SET:
+                if WINDOWS and psutil._psplatform.is_permission_err(err):
                     pass
                 # directory has been removed in mean time
                 elif err.errno != errno.ENOENT:

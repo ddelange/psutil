@@ -978,7 +978,7 @@ class TestProcess(PsutilTestCase):
         if len(initial) > 12:
             initial = initial[:12]  # ...otherwise it will take forever
         combos = []
-        for i in range(0, len(initial) + 1):
+        for i in range(len(initial) + 1):
             for subset in itertools.combinations(initial, i):
                 if subset:
                     combos.append(list(subset))
@@ -1086,11 +1086,6 @@ class TestProcess(PsutilTestCase):
             self.assertEqual(p.ppid(), os.getppid())
         p = self.spawn_psproc()
         self.assertEqual(p.ppid(), os.getpid())
-        if APPVEYOR:
-            # Occasional failures, see:
-            # https://ci.appveyor.com/project/giampaolo/psutil/build/
-            #     job/0hs623nenj7w4m33
-            return
 
     def test_parent(self):
         p = self.spawn_psproc()
@@ -1104,13 +1099,6 @@ class TestProcess(PsutilTestCase):
         child, grandchild = self.spawn_children_pair()
         self.assertEqual(grandchild.parent(), child)
         self.assertEqual(child.parent(), parent)
-
-    def test_parent_disappeared(self):
-        # Emulate a case where the parent process disappeared.
-        p = self.spawn_psproc()
-        with mock.patch("psutil.Process",
-                        side_effect=psutil.NoSuchProcess(0, 'foo')):
-            self.assertIsNone(p.parent())
 
     @unittest.skipIf(QEMU_USER, "QEMU user not supported")
     @retry_on_failure()
@@ -1328,11 +1316,6 @@ class TestProcess(PsutilTestCase):
         for fun, name in ns.iter(ns.all):
             assert_raises_nsp(fun, name)
 
-        # NtQuerySystemInformation succeeds even if process is gone.
-        if WINDOWS and not GITHUB_ACTIONS:
-            normcase = os.path.normcase
-            self.assertEqual(normcase(p.exe()), normcase(PYTHON_EXE))
-
     @unittest.skipIf(not POSIX, 'POSIX only')
     def test_zombie_process(self):
         parent, zombie = self.spawn_zombie()
@@ -1366,10 +1349,13 @@ class TestProcess(PsutilTestCase):
         assert not p.is_running()
         assert p != psutil.Process(subp.pid)
         msg = "process no longer exists and its PID has been reused"
-        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.suspend)
-        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.resume)
-        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.terminate)
-        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.kill)
+        ns = process_namespace(p)
+        for fun, name in ns.iter(ns.setters + ns.killers, clear_cache=False):
+            with self.subTest(name=name):
+                self.assertRaisesRegex(psutil.NoSuchProcess, msg, fun)
+        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.ppid)
+        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.parent)
+        self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.parents)
         self.assertRaisesRegex(psutil.NoSuchProcess, msg, p.children)
 
     def test_pid_0(self):
@@ -1491,6 +1477,7 @@ if POSIX and os.getuid() == 0:
         Executed only on UNIX and only if the user who run the test script
         is root.
         """
+
         # the uid/gid the test suite runs under
         if hasattr(os, 'getuid'):
             PROCESS_UID = os.getuid()
@@ -1554,7 +1541,7 @@ class TestPopen(PsutilTestCase):
                           stderr=subprocess.PIPE, env=PYTHON_EXE_ENV) as proc:
             proc.name()
             proc.cpu_times()
-            proc.stdin
+            proc.stdin  # noqa
             self.assertTrue(dir(proc))
             self.assertRaises(AttributeError, getattr, proc, 'foo')
             proc.terminate()

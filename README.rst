@@ -169,6 +169,8 @@ Supporters
       <a href="https://github.com/guilt"><img height="40" width="40" title="Karthik Kumar Viswanathan" src="https://avatars.githubusercontent.com/u/195178?v=4" /></a>
       <a href="https://github.com/eallrich"><img height="40" width="40" title="Evan Allrich" src="https://avatars.githubusercontent.com/u/17393?v=4" /></a>
       <a href="https://github.com/robusta-dev"><img height="40" width="40" title="Robusta" src="https://avatars.githubusercontent.com/u/82757710?s=200&v=4" /></a>
+      <a href="https://github.com/JeremyGrosser"><img height="40" width="40" title="JeremyGrosser" src="https://avatars.githubusercontent.com/u/2151?v=4" /></a>
+      <a href="https://github.com/getsentry"><img height="40" width="40" title="getsentry" src="https://avatars.githubusercontent.com/u/1396951?s=200&v=4" /></a>
 
     </div>
     <sup><a href="https://github.com/sponsors/giampaolo">add your avatar</a></sup>
@@ -333,6 +335,8 @@ Process management
     >>> p = psutil.Process(7055)
     >>> p
     psutil.Process(pid=7055, name='python3', status='running', started='09:04:44')
+    >>> p.pid
+    7055
     >>> p.name()
     'python3'
     >>> p.exe()
@@ -340,32 +344,29 @@ Process management
     >>> p.cwd()
     '/home/giampaolo'
     >>> p.cmdline()
-    ['/usr/bin/python', 'main.py']
+    ['/usr/bin/python3', 'main.py']
     >>>
-    >>> p.pid
-    7055
     >>> p.ppid()
     7054
-    >>> p.children(recursive=True)
-    [psutil.Process(pid=29835, name='python3', status='sleeping', started='11:45:38'),
-     psutil.Process(pid=29836, name='python3', status='waking', started='11:43:39')]
-    >>>
     >>> p.parent()
     psutil.Process(pid=4699, name='bash', status='sleeping', started='09:06:44')
     >>> p.parents()
     [psutil.Process(pid=4699, name='bash', started='09:06:44'),
      psutil.Process(pid=4689, name='gnome-terminal-server', status='sleeping', started='0:06:44'),
      psutil.Process(pid=1, name='systemd', status='sleeping', started='05:56:55')]
+    >>> p.children(recursive=True)
+    [psutil.Process(pid=29835, name='python3', status='sleeping', started='11:45:38'),
+     psutil.Process(pid=29836, name='python3', status='waking', started='11:43:39')]
     >>>
     >>> p.status()
     'running'
-    >>> p.username()
-    'giampaolo'
     >>> p.create_time()
     1267551141.5019531
     >>> p.terminal()
     '/dev/pts/0'
     >>>
+    >>> p.username()
+    'giampaolo'
     >>> p.uids()
     puids(real=1000, effective=1000, saved=1000)
     >>> p.gids()
@@ -405,14 +406,14 @@ Process management
     [pconn(fd=115, family=<AddressFamily.AF_INET: 2>, type=<SocketType.SOCK_STREAM: 1>, laddr=addr(ip='10.0.0.1', port=48776), raddr=addr(ip='93.186.135.91', port=80), status='ESTABLISHED'),
      pconn(fd=117, family=<AddressFamily.AF_INET: 2>, type=<SocketType.SOCK_STREAM: 1>, laddr=addr(ip='10.0.0.1', port=43761), raddr=addr(ip='72.14.234.100', port=80), status='CLOSING')]
     >>>
-    >>> p.num_threads()
-    4
-    >>> p.num_fds()
-    8
     >>> p.threads()
     [pthread(id=5234, user_time=22.5, system_time=9.2891),
      pthread(id=5237, user_time=0.0707, system_time=1.1)]
     >>>
+    >>> p.num_threads()
+    4
+    >>> p.num_fds()
+    8
     >>> p.num_ctx_switches()
     pctxsw(voluntary=78, involuntary=19)
     >>>

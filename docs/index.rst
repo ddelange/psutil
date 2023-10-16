@@ -90,6 +90,8 @@ Supporters
       <a href="https://github.com/PySimpleGUI"><img height="40" width="40" title="PySimpleGUI" src="https://avatars.githubusercontent.com/u/46163555?v=4" /></a>
       <a href="https://github.com/u93"><img height="40" width="40" title="Eugenio E Breijo" src="https://avatars.githubusercontent.com/u/16807302?v=4" /></a>
       <a href="https://github.com/guilt"><img height="40" width="40" title="Karthik Kumar Viswanathan" src="https://avatars.githubusercontent.com/u/195178?v=4" /></a>
+      <a href="https://github.com/JeremyGrosser"><img height="40" width="40" title="JeremyGrosser" src="https://avatars.githubusercontent.com/u/2151?v=4" /></a>
+      <a href="https://github.com/getsentry"><img height="40" width="40" title="getsentry" src="https://avatars.githubusercontent.com/u/1396951?s=200&v=4" /></a>
     </div>
     <br />
     <sup><a href="https://github.com/sponsors/giampaolo">add your avatar</a></sup>
@@ -1079,6 +1081,7 @@ Process class
     :meth:`cpu_affinity` (set),
     :meth:`rlimit` (set),
     :meth:`children`,
+    :meth:`ppid`,
     :meth:`parent`,
     :meth:`parents`,
     :meth:`suspend`
@@ -2580,7 +2583,7 @@ FAQs
   the Python script as a Windows service (ProcessHacker does this).
 
 * Q: is MinGW supported on Windows?
-* A: no, you should Visual Studio (see `development guide`_).
+* A: no, you should Visual Studio (see `development guide <https://github.com/giampaolo/psutil/blob/master/docs/DEVGUIDE.rst>`_).
 
 Running tests
 =============
@@ -2622,7 +2625,7 @@ contact`_.  Tidelift will coordinate the fix and disclosure.
 Development guide
 =================
 
-If you want to develop psutil take a look at the `development guide`_.
+If you want to develop psutil take a look at the `DEVGUIDE.rst`_.
 
 Platforms support history
 =========================
@@ -2646,6 +2649,10 @@ Supported Python versions are 2.7, 3.6+ and PyPy3.
 Timeline
 ========
 
+- 2023-10-15:
+  `5.9.6 <https://pypi.org/project/psutil/5.9.6/#files>`__ -
+  `what's new <https://github.com/giampaolo/psutil/blob/master/HISTORY.rst#596>`__ -
+  `diff <https://github.com/giampaolo/psutil/compare/release-5.9.5...release-5.9.6#files_bucket>`__
 - 2023-04-17:
   `5.9.5 <https://pypi.org/project/psutil/5.9.5/#files>`__ -
   `what's new <https://github.com/giampaolo/psutil/blob/master/HISTORY.rst#595>`__ -
@@ -3009,7 +3016,7 @@ Timeline
 .. _`BPO-6973`: https://bugs.python.org/issue6973
 .. _`CPU affinity`: https://www.linuxjournal.com/article/6799?page=0,0
 .. _`cpu_distribution.py`: https://github.com/giampaolo/psutil/blob/master/scripts/cpu_distribution.py
-.. _`development guide`: https://github.com/giampaolo/psutil/blob/master/docs/DEVGUIDE.rst
+.. _`DEVGUIDE.rst`: https://github.com/giampaolo/psutil/blob/master/docs/DEVGUIDE.rst
 .. _`disk_usage.py`: https://github.com/giampaolo/psutil/blob/master/scripts/disk_usage.py
 .. _`enum`: https://docs.python.org/3/library/enum.html#module-enum
 .. _`fans.py`: https://github.com/giampaolo/psutil/blob/master/scripts/fans.py
@@ -3032,7 +3039,6 @@ Timeline
 .. _`nettop.py`: https://github.com/giampaolo/psutil/blob/master/scripts/nettop.py
 .. _`open`: https://docs.python.org/3/library/functions.html#open
 .. _`os.cpu_count`: https://docs.python.org/3/library/os.html#os.cpu_count
-.. _`os.getloadavg`: https://docs.python.org/3/library/os.html#os.getloadavg
 .. _`os.getpid`: https://docs.python.org/3/library/os.html#os.getpid
 .. _`os.getpriority`: https://docs.python.org/3/library/os.html#os.getpriority
 .. _`os.getresgid`: https://docs.python.org//library/os.html#os.getresgid
@@ -3063,5 +3069,4 @@ Timeline
 .. _`TerminateProcess`: https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/nf-processthreadsapi-terminateprocess
 .. _`threading.get_ident`: https://docs.python.org/3/library/threading.html#threading.get_ident
 .. _`threading.Thread`: https://docs.python.org/3/library/threading.html#threading.Thread
-.. _Tidelift security contact: https://tidelift.com/security
-.. _Tidelift Subscription: https://tidelift.com/subscription/pkg/pypi-psutil?utm_source=pypi-psutil&utm_medium=referral&utm_campaign=readme
+.. _`Tidelift security contact`: https://tidelift.com/security
