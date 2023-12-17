@@ -12,6 +12,7 @@ PY3_DEPS = \
 	check-manifest \
 	concurrencytest \
 	coverage \
+	packaging \
 	pylint \
 	pyperf \
 	pypinfo \
@@ -269,11 +270,13 @@ pre-release:  ## Check if we're ready to produce a new release.
 	${MAKE} sdist
 	${MAKE} check-sdist
 	${MAKE} install
-	${MAKE} download-wheels-github
-	${MAKE} download-wheels-appveyor
-	${MAKE} check-wheels
-	${MAKE} print-hashes
-	${MAKE} print-dist
+	$(PYTHON) -c \
+		"import requests, sys; \
+		from packaging.version import parse; \
+		from psutil import __version__; \
+		res = requests.get('https://pypi.org/pypi/psutil/json', timeout=5); \
+		versions = sorted(res.json()['releases'], key=parse, reverse=True); \
+		sys.exit('version %r already exists on PYPI' % __version__) if __version__ in versions else 0"
 	$(PYTHON) -c \
 		"from psutil import __version__ as ver; \
 		doc = open('docs/index.rst').read(); \
@@ -281,6 +284,11 @@ pre-release:  ## Check if we're ready to produce a new release.
 		assert ver in doc, '%r not in docs/index.rst' % ver; \
 		assert ver in history, '%r not in HISTORY.rst' % ver; \
 		assert 'XXXX' not in history, 'XXXX in HISTORY.rst';"
+	${MAKE} download-wheels-github
+	${MAKE} download-wheels-appveyor
+	${MAKE} check-wheels
+	${MAKE} print-hashes
+	${MAKE} print-dist
 
 release:  ## Upload a new release.
 	${MAKE} check-sdist

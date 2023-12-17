@@ -211,7 +211,7 @@ if hasattr(_psplatform.Process, "rlimit"):
 AF_LINK = _psplatform.AF_LINK
 
 __author__ = "Giampaolo Rodola'"
-__version__ = "5.9.6"
+__version__ = "5.9.7"
 version_info = tuple([int(num) for num in __version__.split('.')])
 
 _timer = getattr(time, 'monotonic', time.time)
@@ -1302,9 +1302,9 @@ class Process(object):  # noqa: UP004
 # The valid attr names which can be processed by Process.as_dict().
 _as_dict_attrnames = set(
     [x for x in dir(Process) if not x.startswith('_') and x not in
-     ['send_signal', 'suspend', 'resume', 'terminate', 'kill', 'wait',
+     {'send_signal', 'suspend', 'resume', 'terminate', 'kill', 'wait',
       'is_running', 'as_dict', 'parent', 'parents', 'children', 'rlimit',
-      'memory_info_ex', 'oneshot']])
+      'memory_info_ex', 'oneshot'}])
 
 
 # =====================================================================
