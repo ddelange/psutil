@@ -3,6 +3,19 @@
 5.9.8 (IN DEVELOPMENT)
 ======================
 
+**Enhancements**
+
+- 2343_, [FreeBSD]: filter `net_connections()`_ returned list in C instead of
+  Python, and avoid to retrieve unnecessary connection types unless explicitly
+  asked. E.g., on an IDLE system with few IPv6 connections this will run around
+  4 times faster. Before all connection types (TCP, UDP, UNIX) were retrieved
+  internally, even if only a portion was returned.
+- 2342_, [NetBSD]: same as above (#2343) but for NetBSD.
+
+**Bug fixes**
+
+- 930_, [NetBSD], [critical]: `net_connections()`_ implementation was broken.
+  It could either leak memory or core dump.
 - 2340_, [NetBSD]: if process is terminated, `Process.cwd()`_ will return an
   empty string instead of raising `NoSuchProcess`_.
 
