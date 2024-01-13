@@ -86,6 +86,7 @@ def ps(fmt, pid=None):
     else:
         return all_output[0]
 
+
 # ps "-o" field names differ wildly between platforms.
 # "comm" means "only executable name" but is not available on BSD platforms.
 # "args" means "command with all its arguments", and is also not available
@@ -139,8 +140,9 @@ class TestProcess(PsutilTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.pid = spawn_testproc([PYTHON_EXE, "-E", "-O"],
-                                 stdin=subprocess.PIPE).pid
+        cls.pid = spawn_testproc(
+            [PYTHON_EXE, "-E", "-O"], stdin=subprocess.PIPE
+        ).pid
 
     @classmethod
     def tearDownClass(cls):
@@ -215,10 +217,10 @@ class TestProcess(PsutilTestCase):
         # full name from the cmdline.
         name = "long-program-name"
         cmdline = ["long-program-name-extended", "foo", "bar"]
-        with mock.patch("psutil._psplatform.Process.name",
-                        return_value=name):
-            with mock.patch("psutil._psplatform.Process.cmdline",
-                            return_value=cmdline):
+        with mock.patch("psutil._psplatform.Process.name", return_value=name):
+            with mock.patch(
+                "psutil._psplatform.Process.cmdline", return_value=cmdline
+            ):
                 p = psutil.Process()
                 self.assertEqual(p.name(), "long-program-name-extended")
 
@@ -227,10 +229,11 @@ class TestProcess(PsutilTestCase):
         # AccessDenied in which case psutil is supposed to return
         # the truncated name instead of crashing.
         name = "long-program-name"
-        with mock.patch("psutil._psplatform.Process.name",
-                        return_value=name):
-            with mock.patch("psutil._psplatform.Process.cmdline",
-                            side_effect=psutil.AccessDenied(0, "")):
+        with mock.patch("psutil._psplatform.Process.name", return_value=name):
+            with mock.patch(
+                "psutil._psplatform.Process.cmdline",
+                side_effect=psutil.AccessDenied(0, ""),
+            ):
                 p = psutil.Process()
                 self.assertEqual(p.name(), "long-program-name")
 
@@ -238,10 +241,11 @@ class TestProcess(PsutilTestCase):
         # Same as above but emulates a case where cmdline() raises NSP
         # which is supposed to propagate.
         name = "long-program-name"
-        with mock.patch("psutil._psplatform.Process.name",
-                        return_value=name):
-            with mock.patch("psutil._psplatform.Process.cmdline",
-                            side_effect=psutil.NoSuchProcess(0, "")):
+        with mock.patch("psutil._psplatform.Process.name", return_value=name):
+            with mock.patch(
+                "psutil._psplatform.Process.cmdline",
+                side_effect=psutil.NoSuchProcess(0, ""),
+            ):
                 p = psutil.Process()
                 self.assertRaises(psutil.NoSuchProcess, p.name)
 
@@ -250,12 +254,14 @@ class TestProcess(PsutilTestCase):
         time_ps = ps('start', self.pid)
         time_psutil = psutil.Process(self.pid).create_time()
         time_psutil_tstamp = datetime.datetime.fromtimestamp(
-            time_psutil).strftime("%H:%M:%S")
+            time_psutil
+        ).strftime("%H:%M:%S")
         # sometimes ps shows the time rounded up instead of down, so we check
         # for both possible values
         round_time_psutil = round(time_psutil)
         round_time_psutil_tstamp = datetime.datetime.fromtimestamp(
-            round_time_psutil).strftime("%H:%M:%S")
+            round_time_psutil
+        ).strftime("%H:%M:%S")
         self.assertIn(time_ps, [time_psutil_tstamp, round_time_psutil_tstamp])
 
     def test_exe(self):
@@ -270,7 +276,7 @@ class TestProcess(PsutilTestCase):
             # "/usr/local/bin/python"
             # We do not want to consider this difference in accuracy
             # an error.
-            adjusted_ps_pathname = ps_pathname[:len(ps_pathname)]
+            adjusted_ps_pathname = ps_pathname[: len(ps_pathname)]
             self.assertEqual(ps_pathname, adjusted_ps_pathname)
 
     # On macOS the official python installer exposes a python wrapper that
@@ -314,8 +320,9 @@ class TestSystemAPIs(PsutilTestCase):
 
         # There will often be one more process in pids_ps for ps itself
         if len(pids_ps) - len(pids_psutil) > 1:
-            difference = [x for x in pids_psutil if x not in pids_ps] + \
-                         [x for x in pids_ps if x not in pids_psutil]
+            difference = [x for x in pids_psutil if x not in pids_ps] + [
+                x for x in pids_ps if x not in pids_psutil
+            ]
             raise self.fail("difference: " + str(difference))
 
     # for some reason ifconfig -a does not report all interfaces
@@ -331,8 +338,9 @@ class TestSystemAPIs(PsutilTestCase):
                     break
             else:
                 raise self.fail(
-                    "couldn't find %s nic in 'ifconfig -a' output\n%s" % (
-                        nic, output))
+                    "couldn't find %s nic in 'ifconfig -a' output\n%s"
+                    % (nic, output)
+                )
 
     # @unittest.skipIf(CI_TESTING and not psutil.users(), "unreliable on CI")
     @retry_on_failure()
@@ -380,46 +388,56 @@ class TestSystemAPIs(PsutilTestCase):
 
         if not tstamp:
             raise unittest.SkipTest(
-                "cannot interpret tstamp in who output\n%s" % (out))
+                "cannot interpret tstamp in who output\n%s" % (out)
+            )
 
         with self.subTest(psutil=psutil.users(), who=out):
             for idx, u in enumerate(psutil.users()):
                 psutil_value = datetime.datetime.fromtimestamp(
-                    u.started).strftime(tstamp)
+                    u.started
+                ).strftime(tstamp)
                 self.assertEqual(psutil_value, started[idx])
 
     def test_pid_exists_let_raise(self):
         # According to "man 2 kill" possible error values for kill
         # are (EINVAL, EPERM, ESRCH). Test that any other errno
         # results in an exception.
-        with mock.patch("psutil._psposix.os.kill",
-                        side_effect=OSError(errno.EBADF, "")) as m:
+        with mock.patch(
+            "psutil._psposix.os.kill", side_effect=OSError(errno.EBADF, "")
+        ) as m:
             self.assertRaises(OSError, psutil._psposix.pid_exists, os.getpid())
             assert m.called
 
     def test_os_waitpid_let_raise(self):
         # os.waitpid() is supposed to catch EINTR and ECHILD only.
         # Test that any other errno results in an exception.
-        with mock.patch("psutil._psposix.os.waitpid",
-                        side_effect=OSError(errno.EBADF, "")) as m:
+        with mock.patch(
+            "psutil._psposix.os.waitpid", side_effect=OSError(errno.EBADF, "")
+        ) as m:
             self.assertRaises(OSError, psutil._psposix.wait_pid, os.getpid())
             assert m.called
 
     def test_os_waitpid_eintr(self):
         # os.waitpid() is supposed to "retry" on EINTR.
-        with mock.patch("psutil._psposix.os.waitpid",
-                        side_effect=OSError(errno.EINTR, "")) as m:
+        with mock.patch(
+            "psutil._psposix.os.waitpid", side_effect=OSError(errno.EINTR, "")
+        ) as m:
             self.assertRaises(
                 psutil._psposix.TimeoutExpired,
-                psutil._psposix.wait_pid, os.getpid(), timeout=0.01)
+                psutil._psposix.wait_pid,
+                os.getpid(),
+                timeout=0.01,
+            )
             assert m.called
 
     def test_os_waitpid_bad_ret_status(self):
         # Simulate os.waitpid() returning a bad status.
-        with mock.patch("psutil._psposix.os.waitpid",
-                        return_value=(1, -1)) as m:
-            self.assertRaises(ValueError,
-                              psutil._psposix.wait_pid, os.getpid())
+        with mock.patch(
+            "psutil._psposix.os.waitpid", return_value=(1, -1)
+        ) as m:
+            self.assertRaises(
+                ValueError, psutil._psposix.wait_pid, os.getpid()
+            )
             assert m.called
 
     # AIX can return '-' in df output instead of numbers, e.g. for /proc
@@ -451,9 +469,11 @@ class TestSystemAPIs(PsutilTestCase):
                 # https://travis-ci.org/giampaolo/psutil/jobs/138338464
                 # https://travis-ci.org/giampaolo/psutil/jobs/138343361
                 err = str(err).lower()
-                if "no such file or directory" in err or \
-                        "raw devices not supported" in err or \
-                        "permission denied" in err:
+                if (
+                    "no such file or directory" in err
+                    or "raw devices not supported" in err
+                    or "permission denied" in err
+                ):
                     continue
                 raise
             else:
@@ -465,7 +485,6 @@ class TestSystemAPIs(PsutilTestCase):
 
 @unittest.skipIf(not POSIX, "POSIX only")
 class TestMisc(PsutilTestCase):
-
     def test_getpagesize(self):
         pagesize = getpagesize()
         self.assertGreater(pagesize, 0)
@@ -475,4 +494,5 @@ class TestMisc(PsutilTestCase):
 
 if __name__ == '__main__':
     from psutil.tests.runner import run_from_name
+
     run_from_name(__file__)
