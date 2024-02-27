@@ -59,7 +59,7 @@ jobs:
       if: matrix.archs == 'aarch64'
 
     - name: Create wheels + run tests
-      uses: pypa/cibuildwheel@v2.16.2
+      uses: pypa/cibuildwheel@v2.16.5
       with:
         config-file: "./cibuildwheel.toml"
       env:

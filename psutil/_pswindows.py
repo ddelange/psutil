@@ -239,7 +239,6 @@ def virtual_memory():
     """System virtual memory as a namedtuple."""
     mem = cext.virtual_mem()
     totphys, availphys, totsys, availsys = mem
-    #
     total = totphys
     avail = availphys
     free = availphys
@@ -515,7 +514,7 @@ def win_service_get(name):
     return service
 
 
-class WindowsService:
+class WindowsService:  # noqa: PLW1641
     """Represents an installed Windows service."""
 
     def __init__(self, name, display_name):
@@ -865,6 +864,7 @@ class Process:
             if is_permission_err(err):
                 # TODO: the C ext can probably be refactored in order
                 # to get this from cext.proc_info()
+                debug("attempting memory_info() fallback (slower)")
                 info = self._proc_info()
                 return (
                     info[pinfo_map['num_page_faults']],
@@ -992,6 +992,7 @@ class Process:
             return created
         except OSError as err:
             if is_permission_err(err):
+                debug("attempting create_time() fallback (slower)")
                 return self._proc_info()[pinfo_map['create_time']]
             raise
 
@@ -1015,6 +1016,7 @@ class Process:
         except OSError as err:
             if not is_permission_err(err):
                 raise
+            debug("attempting cpu_times() fallback (slower)")
             info = self._proc_info()
             user = info[pinfo_map['user_time']]
             system = info[pinfo_map['kernel_time']]
@@ -1101,6 +1103,7 @@ class Process:
         except OSError as err:
             if not is_permission_err(err):
                 raise
+            debug("attempting io_counters() fallback (slower)")
             info = self._proc_info()
             ret = (
                 info[pinfo_map['io_rcount']],
@@ -1160,6 +1163,7 @@ class Process:
             return cext.proc_num_handles(self.pid)
         except OSError as err:
             if is_permission_err(err):
+                debug("attempting num_handles() fallback (slower)")
                 return self._proc_info()[pinfo_map['num_handles']]
             raise
 

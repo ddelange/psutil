@@ -1,7 +1,21 @@
 *Bug tracker at https://github.com/giampaolo/psutil/issues*
 
-5.9.8 (IN DEVELOPMENT)
+5.9.9 (IN DEVELOPMENT)
 ======================
+
+**Enhancements**
+
+- 2366_, [Windows]: log debug message when using slower process APIs.
+
+**Bug fixes**
+
+- 2360_, [macOS]: can't compile on macOS < 10.13.  (patch by Ryan Schmidt)
+- 2254_, [Linux]: offline cpus raise NotImplementedError in cpu_freq() (patch by Shade Gladden)
+
+5.9.8
+=====
+
+2024-01-19
 
 **Enhancements**
 
@@ -19,7 +33,7 @@
   It could either leak memory or core dump.
 - 2340_, [NetBSD]: if process is terminated, `Process.cwd()`_ will return an
   empty string instead of raising `NoSuchProcess`_.
-- 2345_, [Linux]: fix compilation on older compiler missing DUPLEX_UNKNOWN
+- 2345_, [Linux]: fix compilation on older compiler missing DUPLEX_UNKNOWN.
 - 2222_, [macOS]: `cpu_freq()` now returns fixed values for `min` and `max`
   frequencies in all Apple Silicon chips.
 
