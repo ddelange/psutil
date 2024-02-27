@@ -60,7 +60,6 @@ else:
 
 # fmt: off
 __extra__all__ = [
-    #
     'PROCFS_PATH',
     # io prio constants
     "IOPRIO_CLASS_NONE", "IOPRIO_CLASS_RT", "IOPRIO_CLASS_BE",
@@ -780,6 +779,13 @@ if os.path.exists("/sys/devices/system/cpu/cpufreq/policy0") or os.path.exists(
                 # https://github.com/giampaolo/psutil/issues/1071
                 curr = bcat(pjoin(path, "cpuinfo_cur_freq"), fallback=None)
                 if curr is None:
+                    online_path = (
+                        "/sys/devices/system/cpu/cpu{}/online".format(i)
+                    )
+                    # if cpu core is offline, set to all zeroes
+                    if cat(online_path, fallback=None) == "0\n":
+                        ret.append(_common.scpufreq(0.0, 0.0, 0.0))
+                        continue
                     msg = "can't find current frequency file"
                     raise NotImplementedError(msg)
             curr = int(curr) / 1000
@@ -1355,7 +1361,7 @@ def disk_partitions(all=False):
         if device in ("/dev/root", "rootfs"):
             device = RootFsDeviceFinder().find() or device
         if not all:
-            if device == '' or fstype not in fstypes:
+            if not device or fstype not in fstypes:
                 continue
         maxfile = maxpath = None  # set later
         ntuple = _common.sdiskpart(
@@ -2101,7 +2107,7 @@ class Process:
                         path
                     ):
                         path = path[:-10]
-                ls.append((
+                item = (
                     decode(addr),
                     decode(perms),
                     path,
@@ -2115,7 +2121,8 @@ class Process:
                     data.get(b'Referenced:', 0),
                     data.get(b'Anonymous:', 0),
                     data.get(b'Swap:', 0),
-                ))
+                )
+                ls.append(item)
             return ls
 
     @wrap_exceptions

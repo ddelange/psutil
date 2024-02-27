@@ -85,7 +85,6 @@ from psutil import POSIX
 from psutil import WINDOWS
 from psutil._compat import PY3
 from psutil._compat import super
-from psutil._compat import u
 from psutil.tests import APPVEYOR
 from psutil.tests import ASCII_FS
 from psutil.tests import CI_TESTING
@@ -190,7 +189,7 @@ class TestFSAPIs(BaseUnicodeTest):
     def expect_exact_path_match(self):
         # Do not expect psutil to correctly handle unicode paths on
         # Python 2 if os.listdir() is not able either.
-        here = '.' if isinstance(self.funky_name, str) else u('.')
+        here = '.' if isinstance(self.funky_name, str) else u'.'
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             return self.funky_name in os.listdir(here)
@@ -198,7 +197,7 @@ class TestFSAPIs(BaseUnicodeTest):
     # ---
 
     def test_proc_exe(self):
-        cmd = [self.funky_name, "-c", "time.sleep(10)"]
+        cmd = [self.funky_name, "-c", "import time; time.sleep(10)"]
         subp = self.spawn_testproc(cmd)
         p = psutil.Process(subp.pid)
         exe = p.exe()
@@ -209,7 +208,7 @@ class TestFSAPIs(BaseUnicodeTest):
             )
 
     def test_proc_name(self):
-        cmd = [self.funky_name, "-c", "time.sleep(10)"]
+        cmd = [self.funky_name, "-c", "import time; time.sleep(10)"]
         subp = self.spawn_testproc(cmd)
         name = psutil.Process(subp.pid).name()
         self.assertIsInstance(name, str)
@@ -217,7 +216,7 @@ class TestFSAPIs(BaseUnicodeTest):
             self.assertEqual(name, os.path.basename(self.funky_name))
 
     def test_proc_cmdline(self):
-        cmd = [self.funky_name, "-c", "time.sleep(10)"]
+        cmd = [self.funky_name, "-c", "import time; time.sleep(10)"]
         subp = self.spawn_testproc(cmd)
         p = psutil.Process(subp.pid)
         cmdline = p.cmdline()

@@ -56,7 +56,6 @@ from psutil._compat import FileExistsError
 from psutil._compat import FileNotFoundError
 from psutil._compat import range
 from psutil._compat import super
-from psutil._compat import u
 from psutil._compat import unicode
 from psutil._compat import which
 
@@ -192,7 +191,7 @@ if os.name == 'java':
     TESTFN_PREFIX = '$psutil-%s-' % os.getpid()
 else:
     TESTFN_PREFIX = '@psutil-%s-' % os.getpid()
-UNICODE_SUFFIX = u("-ƒőő")
+UNICODE_SUFFIX = u"-ƒőő"
 # An invalid unicode string.
 if PY3:
     INVALID_UNICODE_SUFFIX = b"f\xc0\x80".decode('utf8', 'surrogateescape')
@@ -358,7 +357,7 @@ def _reap_children_on_err(fun):
 
 @_reap_children_on_err
 def spawn_testproc(cmd=None, **kwds):
-    """Creates a python subprocess which does nothing for 60 secs and
+    """Create a python subprocess which does nothing for some secs and
     return it as a subprocess.Popen instance.
     If "cmd" is specified that is used instead of python.
     By default stdin and stdout are redirected to /dev/null.
@@ -377,13 +376,13 @@ def spawn_testproc(cmd=None, **kwds):
         CREATE_NO_WINDOW = 0x8000000
         kwds.setdefault("creationflags", CREATE_NO_WINDOW)
     if cmd is None:
-        testfn = get_testfn()
+        testfn = get_testfn(dir=os.getcwd())
         try:
             safe_rmpath(testfn)
             pyline = (
-                "from time import sleep;"
+                "import time;"
                 + "open(r'%s', 'w').close();" % testfn
-                + "[sleep(0.1) for x in range(100)];"  # 10 secs
+                + "[time.sleep(0.1) for x in range(100)];"  # 10 secs
             )
             cmd = [PYTHON_EXE, "-c", pyline]
             sproc = subprocess.Popen(cmd, **kwds)
@@ -743,9 +742,9 @@ class retry:
                     self.sleep()
                     continue
             if PY3:
-                raise exc
+                raise exc  # noqa: PLE0704
             else:
-                raise
+                raise  # noqa: PLE0704
 
         # This way the user of the decorated function can change config
         # parameters.
@@ -766,9 +765,6 @@ def wait_for_pid(pid):
     if pid not in psutil.pids():
         raise psutil.NoSuchProcess(pid)
     psutil.Process(pid)
-    if WINDOWS:
-        # give it some more time to allow better initialization
-        time.sleep(0.01)
 
 
 @retry(
@@ -1953,7 +1949,7 @@ def is_namedtuple(x):
     """Check if object is an instance of namedtuple."""
     t = type(x)
     b = t.__bases__
-    if len(b) != 1 or b[0] != tuple:
+    if len(b) != 1 or b[0] is not tuple:
         return False
     f = getattr(t, '_fields', None)
     if not isinstance(f, tuple):
