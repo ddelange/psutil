@@ -1294,7 +1294,7 @@ Process class
   .. method:: cwd()
 
     The process current working directory as an absolute path. If cwd cannot be
-    determined for some internal reason (e.g. system process or directiory no
+    determined for some internal reason (e.g. system process or directory no
     longer exists) it may return an empty string.
 
     .. versionchanged:: 5.6.4 added support for NetBSD
@@ -3048,6 +3048,7 @@ Timeline
 .. _`nettop.py`: https://github.com/giampaolo/psutil/blob/master/scripts/nettop.py
 .. _`open`: https://docs.python.org/3/library/functions.html#open
 .. _`os.cpu_count`: https://docs.python.org/3/library/os.html#os.cpu_count
+.. _`os.getloadavg`: https://docs.python.org//library/os.html#os.getloadavg
 .. _`os.getpid`: https://docs.python.org/3/library/os.html#os.getpid
 .. _`os.getpriority`: https://docs.python.org/3/library/os.html#os.getpriority
 .. _`os.getresgid`: https://docs.python.org//library/os.html#os.getresgid

@@ -43,7 +43,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: macos-12, archs: "x86_64 arm64"}
+          - {os: macos-13, archs: "x86_64"}
+          - {os: macos-14, archs: "arm64"}
           - {os: ubuntu-latest, archs: "x86_64 i686"}
           - {os: ubuntu-latest, archs: "aarch64"}
           - {os: windows-2019, archs: "AMD64 x86"}
@@ -59,7 +60,7 @@ jobs:
       if: matrix.archs == 'aarch64'
 
     - name: Create wheels + run tests
-      uses: pypa/cibuildwheel@v2.16.5
+      uses: pypa/cibuildwheel@v2.17.0
       with:
         config-file: "./cibuildwheel.toml"
       env:
@@ -161,7 +162,7 @@ jobs:
         python-version: 3.x
     - name: 'Run linters'
       run: |
-        python3 -m pip install ruff black rstcheck toml-sort sphinx
+        python3 -m pip install ruff==0.3.4 black rstcheck toml-sort sphinx
         make lint-all
 
   # Check sanity of .tar.gz + wheel files

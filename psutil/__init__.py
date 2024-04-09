@@ -213,7 +213,7 @@ if hasattr(_psplatform.Process, "rlimit"):
 AF_LINK = _psplatform.AF_LINK
 
 __author__ = "Giampaolo Rodola'"
-__version__ = "5.9.8"
+__version__ = "5.9.9"
 version_info = tuple([int(num) for num in __version__.split('.')])
 
 _timer = getattr(time, 'monotonic', time.time)
@@ -2037,7 +2037,7 @@ def swap_memory():
 
 
 # =====================================================================
-# --- disks/paritions related functions
+# --- disks/partitions related functions
 # =====================================================================
 
 
