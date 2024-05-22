@@ -51,7 +51,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+
+    # see https://cibuildwheel.pypa.io/en/stable/faq/#macos-building-cpython-38-wheels-on-arm64
+    - name: "Install python 3.8 universal2 on macOS arm64"
+      if: runner.os == 'macOS' && runner.arch == 'ARM64'
+      uses: actions/setup-python@v5
+      env:
+          PIP_DISABLE_PIP_VERSION_CHECK: 1
+      with:
+        python-version: 3.8
+
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.11
 
@@ -60,7 +70,7 @@ jobs:
       if: matrix.archs == 'aarch64'
 
     - name: Create wheels + run tests
-      uses: pypa/cibuildwheel@v2.17.0
+      uses: pypa/cibuildwheel@v2.18.0
       with:
         config-file: "./cibuildwheel.toml"
       env:
@@ -68,9 +78,9 @@ jobs:
         CIBW_PRERELEASE_PYTHONS: True
 
     - name: Upload wheels
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: wheels-py3-${{ matrix.os }}-${{ startsWith(matrix.os, 'ubuntu') && 'all' || matrix.archs }}
         path: wheelhouse
         
     - uses: softprops/action-gh-release@v1
@@ -106,7 +116,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.9
 
@@ -114,9 +124,9 @@ jobs:
       uses: pypa/cibuildwheel@v1.12.0
 
     - name: Upload wheels
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: wheels-py2-${{ matrix.os }}
         path: wheelhouse
 
     - uses: softprops/action-gh-release@v1
@@ -157,24 +167,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.x
     - name: 'Run linters'
       run: |
-        python3 -m pip install ruff==0.3.4 black rstcheck toml-sort sphinx
+        python3 -m pip install ruff==0.4.4 black rstcheck toml-sort sphinx
         make lint-all
 
-  # Check sanity of .tar.gz + wheel files
-  check-dist:
+  # upload weels as a single artefact
+  upload-wheels:
     needs: [py2, py3]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: wheels
+          pattern: wheels-*
+          separate-directories: false
+          delete-merged: true
+
+  # Check sanity of .tar.gz + wheel files
+  check-dist:
+    needs: [upload-wheels]
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: wheels
           path: wheelhouse
