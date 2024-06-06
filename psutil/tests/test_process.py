@@ -761,11 +761,15 @@ class TestProcess(PsutilTestCase):
         cmdline.extend(["-c", "import time; time.sleep(10)"])
         p = self.spawn_psproc(cmdline)
         if OPENBSD:
-            # XXX: for some reason the test process may turn into a
-            # zombie (don't know why).
             try:
+                ret = p.cmdline()
+                if ret == []:
+                    # https://github.com/giampaolo/psutil/issues/2250
+                    raise unittest.SkipTest("OPENBSD: returned EBUSY")
                 self.assertEqual(p.cmdline(), cmdline)
             except psutil.ZombieProcess:
+                # XXX: for some reason the test process may turn into a
+                # zombie (don't know why).
                 raise unittest.SkipTest("OPENBSD: process turned into zombie")
         elif QEMU_USER:
             self.assertEqual(p.cmdline()[2:], cmdline)
@@ -821,7 +825,7 @@ class TestProcess(PsutilTestCase):
     @unittest.skipIf(not POSIX, 'POSIX only')
     def test_uids(self):
         p = psutil.Process()
-        real, effective, saved = p.uids()
+        real, effective, _saved = p.uids()
         # os.getuid() refers to "real" uid
         self.assertEqual(real, os.getuid())
         # os.geteuid() refers to "effective" uid
@@ -835,7 +839,7 @@ class TestProcess(PsutilTestCase):
     @unittest.skipIf(not POSIX, 'POSIX only')
     def test_gids(self):
         p = psutil.Process()
-        real, effective, saved = p.gids()
+        real, effective, _saved = p.gids()
         # os.getuid() refers to "real" uid
         self.assertEqual(real, os.getgid())
         # os.geteuid() refers to "effective" uid
