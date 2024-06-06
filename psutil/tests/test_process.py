@@ -752,11 +752,15 @@ class TestProcess(PsutilTestCase):
         cmdline.extend(["-c", "import time; time.sleep(10)"])
         p = self.spawn_psproc(cmdline)
         if OPENBSD:
-            # XXX: for some reason the test process may turn into a
-            # zombie (don't know why).
             try:
+                ret = p.cmdline()
+                if ret == []:
+                    # https://github.com/giampaolo/psutil/issues/2250
+                    raise unittest.SkipTest("OPENBSD: returned EBUSY")
                 self.assertEqual(p.cmdline(), cmdline)
             except psutil.ZombieProcess:
+                # XXX: for some reason the test process may turn into a
+                # zombie (don't know why).
                 raise unittest.SkipTest("OPENBSD: process turned into zombie")
         else:
             self.assertEqual(p.cmdline(), cmdline)
