@@ -64,6 +64,8 @@
 Fork
 ====
 
+This fork is archived since https://github.com/giampaolo/psutil/pull/2425 has been merged.
+
 This fork builds `more wheels <https://github.com/giampaolo/psutil/pull/2103>`__:
 
 - It receives `automatic <https://github.com/wei/pull>`__ merge commits from upstream.
